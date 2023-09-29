@@ -1,8 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+@inject IDataService DataService
 
 <MudLayout>
 	<MudAppBar Elevation="0">
@@ -11,6 +9,15 @@
 		<MudSpacer />
 		<MudIconButton Icon="@Icons.Filled.Games" Color="Color.Inherit" Href="https://www.milkywayidle.com/game"
 		               Target="_blank" />
+		@if (_isLightMode)
+		{
+			<MudIconButton Icon="@Icons.Material.Filled.Brightness4" OnClick="@ToggleTheme" />
+		}
+		else
+		{
+			<MudIconButton Icon="@Icons.Material.Filled.Brightness5" OnClick="@ToggleTheme" />
+		}
+
 	</MudAppBar>
 	<MudDrawer @bind-Open="_drawerOpen" Elevation="1">
 		<MudDrawerHeader>
@@ -25,11 +32,54 @@
 	</MudMainContent>
 </MudLayout>
 
+<MudThemeProvider Theme="DataService.CurrentTheme" />
+
 @code {
 	bool _drawerOpen = true;
+	private bool _isLightMode = true;
 
 	void DrawerToggle()
 	{
 		_drawerOpen = !_drawerOpen;
+	}
+
+	private void ToggleTheme()
+	{
+		_isLightMode = !_isLightMode;
+		if (!_isLightMode)
+		{
+			DataService.CurrentTheme = GenerateDarkTheme();
+		}
+		else
+		{
+			DataService.CurrentTheme = new MudTheme();
+		}
+	}
+
+	private MudTheme GenerateDarkTheme() =>
+		new MudTheme
+		{
+			Palette = new Palette()
+			{
+				Black = "#27272f",
+				Background = "#32333d",
+				BackgroundGrey = "#27272f",
+				Surface = "#373740",
+				TextPrimary = "#ffffffb3",
+				TextSecondary = "rgba(255,255,255, 0.50)",
+				AppbarBackground = "#27272f",
+				AppbarText = "#ffffffb3",
+				DrawerBackground = "#27272f",
+				DrawerText = "#ffffffb3",
+				DrawerIcon = "#ffffffb3"
+			}
+		};
+
+	protected override async Task OnInitializedAsync()
+	{
+
+		if (_isLightMode)
+			ToggleTheme();
+		
 	}
 }
