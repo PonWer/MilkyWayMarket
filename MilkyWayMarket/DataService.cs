@@ -18,10 +18,14 @@ namespace MilkyWayMarket
 
 		public List<string> HistoryKeys { get; }
 		event EventHandler DataUpdated;
+
+		public bool PagesLoading { get; }
+
 	}
 	public class DataService : IDataService
 	{
 		private bool initiated = false;
+		private bool _pagesLoading = true;
 		private List<Container> dataPoints = new List<Container>();
 		private List<Container> emptyDataPoints = new List<Container>();
 		private MudTheme _currentTheme;
@@ -40,7 +44,10 @@ namespace MilkyWayMarket
 
 		public List<Container> DataPoints => dataPoints;
 		public int EmptyDataPoints => emptyDataPoints.Count;
-		public int DataPointsToFetch => 120;
+		public int DataPointsToFetch => 20;
+		public int DataPointsSkip => 5;
+
+		public bool PagesLoading => _pagesLoading;
 
 		public Dictionary<string, ItemHistory> History => history;
 
@@ -51,7 +58,14 @@ namespace MilkyWayMarket
 			if(initiated)
 				return;
 
-			emptyDataPoints = await GetDeployments.Call(DataPointsToFetch);
+			for (int i = 0; i < DataPointsToFetch; i++)
+			{
+				emptyDataPoints.AddRange(await GetDeployments.Call(2,i));
+				DataUpdated.Invoke(null, EventArgs.Empty);
+			}
+
+			_pagesLoading = false;
+
 			foreach (var emptyDataPoint in emptyDataPoints)
 			{
 				dataPoints.Insert(0,await GetCommitData.Call(emptyDataPoint));

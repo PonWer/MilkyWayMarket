@@ -4,14 +4,16 @@
 
 @if (DataService.Loading)
 {
-	@if (@DataService.EmptyDataPoints == 0)
+	@if (@DataService.PagesLoading)
 	{
 		<MudText Typo="Typo.h6">Fetching pages</MudText>
+		<MudProgressLinear Color="Color.Primary" Value="@DataService.EmptyDataPoints" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
+		<MudText Typo="Typo.h6">@DataService.EmptyDataPoints / @DataService.DataPointsToFetch</MudText>
 	}
 	else
 	{
 		<MudText Typo="Typo.h6">Fetching data</MudText>
-		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.EmptyDataPoints" Class="my-7"/>
+		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
 		<MudText Typo="Typo.h6">@DataService.DataPoints.Count / @DataService.DataPointsToFetch</MudText>
 		@if (@DataService.DataPoints.Any())
 		{
