@@ -1,32 +1,37 @@
 ﻿@page "/"
-@using MilkyWayMarket.Code
+@inject IDataService DataService
 
-@using System.Net.Http.Json
-@inject HttpClient httpClient
-
-<MudTable Items="@Elements.Take(4)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
-	<HeaderContent>
-		<MudTh>Commit</MudTh>
-		<MudTh>Date</MudTh>
-		<MudTh>DataPoints</MudTh>
-	</HeaderContent>
-	<RowTemplate>
-		<MudTd DataLabel="Commit">@context.Commit</MudTd>
-		<MudTd DataLabel="Date">@context.Date</MudTd>
-		<MudTd DataLabel="ItemCount">@context.Items.Count</MudTd>
-	</RowTemplate>
-</MudTable>
-
-<MudSwitch @bind-Checked="_loading">Show Loading</MudSwitch>
+<div>
+	<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="i" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
+	<MudButton @onclick="RandomizeData">Randomize Data</MudButton>
+	<MudText Typo="Typo.h6">Selected portion of the chart: @i</MudText>
+</div>
 
 @code {
-	private bool _loading;
-	private List<Container> Elements = new List<Container>();
+	private int i = -1; //default value cannot be 0 -> first selectedindex is 0.
 
-	protected override async Task OnInitializedAsync()
+	public List<ChartSeries> Series = new List<ChartSeries>()
 	{
-		_loading = true;
-		//Elements = await GetCommitData.Call(await GetDeployments.Call());
-		_loading = false;
+		new ChartSeries() { Name = "Series 1", Data = new double[] { 90, 79, 72, 69, 62, 62, 55, 65, 70 } },
+		new ChartSeries() { Name = "Series 2", Data = new double[] { 10, 41, 35, 51, 49, 62, 69, 91, 148 } },
+	};
+	public string[] XAxisLabels = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" };
+
+	Random random = new Random();
+	public void RandomizeData()
+	{
+		var new_series = new List<ChartSeries>()
+		{
+			new ChartSeries() { Name = "Series 1", Data = new double[9] },
+			new ChartSeries() { Name = "Series 2", Data = new double[9] },
+		};
+		for (int i = 0; i < 9; i++)
+		{
+			new_series[0].Data[i] = random.NextDouble() * 100;
+			new_series[1].Data[i] = random.NextDouble() * 100;
+		}
+		Series = new_series;
+		StateHasChanged();
 	}
 }
+

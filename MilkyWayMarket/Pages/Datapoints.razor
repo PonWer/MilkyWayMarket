@@ -1,5 +1,16 @@
-﻿<h3>Datapoints</h3>
+﻿@page "/DataPoints"
 
-@code {
+@inject IDataService DataService
 
-}
+<MudTable Items="@DataService.DataPoints" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@DataService.Loading" LoadingProgressColor="Color.Info">
+	<HeaderContent>
+		<MudTh>Commit</MudTh>
+		<MudTh>Date</MudTh>
+		<MudTh>DataPoints</MudTh>
+	</HeaderContent>
+	<RowTemplate>
+		<MudTd DataLabel="Commit">@context.Commit</MudTd>
+		<MudTd DataLabel="Date">@context.Date</MudTd>
+		<MudTd DataLabel="ItemCount">@context.Items.Count</MudTd>
+	</RowTemplate>
+</MudTable>
