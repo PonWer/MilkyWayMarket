@@ -1,37 +1,110 @@
 ﻿@page "/"
+@using System.Globalization
 @inject IDataService DataService
 
-<div>
-	<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="i" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
-	<MudButton @onclick="RandomizeData">Randomize Data</MudButton>
-	<MudText Typo="Typo.h6">Selected portion of the chart: @i</MudText>
-</div>
+@if (DataService.Loading)
+{
+	@if (@DataService.EmptyDataPoints == 0)
+	{
+		<MudText Typo="Typo.h6">Fetching pages</MudText>
+	}
+	else
+	{
+		<MudText Typo="Typo.h6">Fetching data</MudText>
+		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.EmptyDataPoints" Class="my-7"/>
+		<MudText Typo="Typo.h6">@DataService.DataPoints.Count / @DataService.DataPointsToFetch</MudText>
+		@if (@DataService.DataPoints.Any())
+		{
+			<MudText Typo="Typo.h6">Latest fetched: @DataService.DataPoints.First().Date.Value</MudText>
+		}
+	}
+}
+else
+{
+	<div>
+		@* 	<MudSelect Margin="Margin.Dense" T="string" Label="Coffee" Variant="Variant.Text" bind-Value="selectedItem">
+	@foreach (var item in DataService.HistoryKeys)
+	{
+	<MudSelectItem Value="@item">@item</MudSelectItem>
+	}
+	</MudSelect> *@
 
-@code {
+		<MudItem xs="12" sm="6" md="4">
+			<MudAutocomplete T="string" Label="Item" @bind-Value="selectedItem"
+							 SearchFunc="@Search" dornmentIcon="@Icons.Material.Filled.Search"
+							 AdornmentColor="Color.Primary" />
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ButtonClicked">View</MudButton>
+		</MudItem>
+
+
+
+		<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="i" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
+		<MudText Typo="Typo.h6">Selected portion of the chart: @i</MudText>
+	</div>
+
+	@code {
 	private int i = -1; //default value cannot be 0 -> first selectedindex is 0.
+	public List<ChartSeries> Series = new List<ChartSeries>();
+	public string[] XAxisLabels = Array.Empty<string>();
+	private string selectedItem;
 
-	public List<ChartSeries> Series = new List<ChartSeries>()
+	private async Task<IEnumerable<string>> Search(string value)
 	{
-		new ChartSeries() { Name = "Series 1", Data = new double[] { 90, 79, 72, 69, 62, 62, 55, 65, 70 } },
-		new ChartSeries() { Name = "Series 2", Data = new double[] { 10, 41, 35, 51, 49, 62, 69, 91, 148 } },
-	};
-	public string[] XAxisLabels = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" };
+		while (DataService.Loading)
+		{
+			// In real life use an asynchronous function for fetching data from an api.
+			await Task.Delay(5);
+		}
 
-	Random random = new Random();
-	public void RandomizeData()
+		// if text is null or empty, don't return values (drop-down will not open)
+		return string.IsNullOrEmpty(value) ?
+			DataService.HistoryKeys :
+			DataService.HistoryKeys.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+	}
+
+	private void ButtonClicked()
 	{
+		if (string.IsNullOrWhiteSpace(selectedItem))
+			return;
+
+		var itemHistory = DataService.History[selectedItem];
+
 		var new_series = new List<ChartSeries>()
 		{
-			new ChartSeries() { Name = "Series 1", Data = new double[9] },
-			new ChartSeries() { Name = "Series 2", Data = new double[9] },
+			new ChartSeries() { Name = "Ask", Data = new double[itemHistory.history.Count] },
+			new ChartSeries() { Name = "Bid", Data = new double[itemHistory.history.Count] },
 		};
-		for (int i = 0; i < 9; i++)
+
+		XAxisLabels = new string[itemHistory.history.Count];
+		var latestDate = string.Empty;
+
+		for (int i = 0; i < itemHistory.history.Count; i++)
 		{
-			new_series[0].Data[i] = random.NextDouble() * 100;
-			new_series[1].Data[i] = random.NextDouble() * 100;
+			new_series[0].Data[i] = itemHistory.history.ElementAt(i).Value.Ask;
+			new_series[1].Data[i] = itemHistory.history.ElementAt(i).Value.Bid;
+			var shortDateString = itemHistory.history.ElementAt(i).Key.ToString("dd/M", CultureInfo.InvariantCulture);
+
+			if (shortDateString != latestDate)
+			{
+				latestDate = shortDateString;
+				XAxisLabels[i] = shortDateString;
+			}
+			else
+			{
+				XAxisLabels[i] = string.Empty;
+			}
+			
+
 		}
 		Series = new_series;
 		StateHasChanged();
 	}
+
+		protected override async Task OnInitializedAsync()
+		{
+			DataService.DataUpdated += (sender, args) => StateHasChanged();
+		}
 }
 
+
+}
