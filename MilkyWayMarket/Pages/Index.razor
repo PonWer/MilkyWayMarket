@@ -1,9 +1,32 @@
 ﻿@page "/"
+@using MilkyWayMarket.Code
 
-<PageTitle>Index</PageTitle>
+@using System.Net.Http.Json
+@inject HttpClient httpClient
 
-<h1>Hello, world!</h1>
+<MudTable Items="@Elements.Take(4)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+	<HeaderContent>
+		<MudTh>Commit</MudTh>
+		<MudTh>Date</MudTh>
+		<MudTh>DataPoints</MudTh>
+	</HeaderContent>
+	<RowTemplate>
+		<MudTd DataLabel="Commit">@context.Commit</MudTd>
+		<MudTd DataLabel="Date">@context.Date</MudTd>
+		<MudTd DataLabel="ItemCount">@context.Items.Count</MudTd>
+	</RowTemplate>
+</MudTable>
 
-Welcome to your new app.
+<MudSwitch @bind-Checked="_loading">Show Loading</MudSwitch>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+	private bool _loading;
+	private List<Container> Elements = new List<Container>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		_loading = true;
+		//Elements = await GetCommitData.Call(await GetDeployments.Call());
+		_loading = false;
+	}
+}

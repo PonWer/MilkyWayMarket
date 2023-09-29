@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkyWayMarket", "MilkyWayMarket\MilkyWayMarket.csproj", "{2F305F83-3ECD-496E-9BEC-05AA9CC349AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MilkyWayMarket", "MilkyWayMarket\MilkyWayMarket.csproj", "{2F305F83-3ECD-496E-9BEC-05AA9CC349AC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetDataFromGithub", "GetDataFromGithub\GetDataFromGithub.csproj", "{E82C49AD-F6B7-4089-B5AD-2BB6DF035AEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetDataFromGithub.Debug", "GetDataFromGithub.Debug\GetDataFromGithub.Debug.csproj", "{61E18915-72D9-4514-AACD-4899213052F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{2F305F83-3ECD-496E-9BEC-05AA9CC349AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F305F83-3ECD-496E-9BEC-05AA9CC349AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F305F83-3ECD-496E-9BEC-05AA9CC349AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E82C49AD-F6B7-4089-B5AD-2BB6DF035AEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E82C49AD-F6B7-4089-B5AD-2BB6DF035AEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E82C49AD-F6B7-4089-B5AD-2BB6DF035AEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E82C49AD-F6B7-4089-B5AD-2BB6DF035AEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61E18915-72D9-4514-AACD-4899213052F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61E18915-72D9-4514-AACD-4899213052F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61E18915-72D9-4514-AACD-4899213052F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61E18915-72D9-4514-AACD-4899213052F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
