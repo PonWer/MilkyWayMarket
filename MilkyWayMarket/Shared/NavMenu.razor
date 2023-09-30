@@ -10,6 +10,8 @@
 
 	protected override async Task OnInitializedAsync()
 	{
+		SQLitePCL.Batteries.Init();
+
 		await DataService.Init();
 	}
 }
