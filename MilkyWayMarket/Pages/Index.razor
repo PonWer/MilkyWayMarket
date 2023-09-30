@@ -2,23 +2,25 @@
 @using System.Globalization
 @inject IDataService DataService
 
-@if (DataService.Loading)
+@if (!@DataService.Initiated)
 {
-	@if (@DataService.PagesLoading)
+	@if (!@DataService.LatestDeploymentFound)
 	{
-		<MudText Typo="Typo.h6">Fetching pages</MudText>
-		<MudProgressLinear Color="Color.Primary" Value="@DataService.EmptyDataPoints" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
-		<MudText Typo="Typo.h6">@DataService.EmptyDataPoints / @DataService.DataPointsToFetch</MudText>
+		<MudText Typo="Typo.h6">Looking for latest deployment to holychikenz/MWIApi</MudText>
+	}
+	else if (!@DataService.DbDownloaded)
+	{
+		<MudText Typo="Typo.h6">downloading database to @DataService.DatabasePath</MudText>
 	}
 	else
 	{
-		<MudText Typo="Typo.h6">Fetching data</MudText>
+		<MudText Typo="Typo.h6">@dataUpdatedMessage</MudText>@* 
 		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
 		<MudText Typo="Typo.h6">@DataService.DataPoints.Count / @DataService.DataPointsToFetch</MudText>
 		@if (@DataService.DataPoints.Any())
 		{
 			<MudText Typo="Typo.h6">Latest fetched: @DataService.DataPoints.First().Date.Value</MudText>
-		}
+		} *@
 	}
 }
 else
@@ -49,10 +51,11 @@ else
 	public List<ChartSeries> Series = new List<ChartSeries>();
 	public string[] XAxisLabels = Array.Empty<string>();
 	private string selectedItem;
+	private string dataUpdatedMessage;
 
 	private async Task<IEnumerable<string>> Search(string value)
 	{
-		while (DataService.Loading)
+		while (!DataService.Initiated)
 		{
 			// In real life use an asynchronous function for fetching data from an api.
 			await Task.Delay(5);
@@ -95,17 +98,21 @@ else
 			{
 				XAxisLabels[i] = string.Empty;
 			}
-			
+
 
 		}
 		Series = new_series;
 		StateHasChanged();
 	}
 
-		protected override async Task OnInitializedAsync()
+	protected override async Task OnInitializedAsync()
+	{
+		DataService.DataUpdated += (sender, message) =>
 		{
-			DataService.DataUpdated += (sender, args) => StateHasChanged();
-		}
+			dataUpdatedMessage = message;
+			StateHasChanged();
+		};
+	}
 }
 
 

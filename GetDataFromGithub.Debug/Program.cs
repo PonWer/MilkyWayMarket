@@ -1,12 +1,15 @@
-﻿using MilkyWayMarket.Code;
+﻿using Microsoft.Data.Sqlite;
+using MilkyWayMarket.Code;
+using System.ComponentModel;
+using System.Globalization;
 using System.Xml.Linq;
+using GetDataFromGithub;
 
-List<Container> Elements = new List<Container>();
-
-
-foreach (var container in await GetDeployments.Call(10, 0))
-{
-	Elements.Add(await GetCommitData.Call(container));
-}
+var path = $@"{System.IO.Path.GetTempPath()}MilkyWayMarket.db";
 
 
+//var latest = await GetDeployments.Call(1, 0);
+//await GetCommitData.Call(latest.First(),path);
+var history = await ReadFromDatabase.Call(path);
+
+Console.ReadKey();
