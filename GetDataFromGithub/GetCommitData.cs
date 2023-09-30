@@ -1,35 +1,40 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json.Nodes;
-using SimpleJSON;
 
 namespace MilkyWayMarket.Code;
 
 public static class GetCommitData
 {
-	public static async Task<Container> Call(Container container)
+	public static async Task<bool> Call(Container container, string path)
 	{
 		for (var i = 0; i < 3; i++)
 		{
 			try
 			{
-				//var marketDb = $"https://github.com/holychikenz/MWIApi/raw/{commit}/market.db";
-				var marketapi = $"https://raw.githubusercontent.com/holychikenz/MWIApi/{container.Commit}/milkyapi.json";
+				var marketDb = $"https://github.com/holychikenz/MWIApi/raw/{container.Commit}/market.db";
+				//var marketapi = $"https://raw.githubusercontent.com/holychikenz/MWIApi/{container.Commit}/milkyapi.json";
 				//var medianmarket = $"https://raw.githubusercontent.com/holychikenz/MWIApi/{container.Commit}/medianmarket.json";
 
 				using var httpClient = new HttpClient();
 
-				var response_marketapi = await httpClient.GetAsync(marketapi);
+				var response_marketapi = await httpClient.GetAsync(marketDb);
 				//var response_medianmarket = httpClient.GetAsync(medianmarket).Result;
 
 				if (!response_marketapi.IsSuccessStatusCode)
 					throw new FileNotFoundException();
 
-				var content = response_marketapi.Content;
-				var contentStream = await content.ReadAsStringAsync();
-				ConvertContent(contentStream, container);
 
-				break;
+				var contentStream = await response_marketapi.Content.ReadAsStreamAsync();
+
+
+				using (var fileStream = File.Create(path))
+				{
+					contentStream.Seek(0, SeekOrigin.Begin);
+					await contentStream.CopyToAsync(fileStream);
+				}
+
+				return true;
 
 			}
 			catch (Exception e)
@@ -39,46 +44,6 @@ public static class GetCommitData
 			}
 		}
 
-
-
-		return container;
-	}
-
-	private static void ConvertContent(string contentStream, Container container)
-	{
-		JSONNode data = JSON.Parse(contentStream);
-
-		container.Items = new List<Item>();
-
-		foreach (var marketItem in data["market"])
-		{
-			var item = new Item
-			{
-				Name = marketItem.Key
-			};
-
-			if (marketItem.Value == null)
-			{
-				Console.WriteLine($"{marketItem.Key} has no marketItem.Value");
-				continue;
-			}
-
-			if (int.TryParse(marketItem.Value["vendor"].Value, out int result))
-				item.Vendor = result;
-			else
-				item.Vendor = -1;
-
-			if (int.TryParse(marketItem.Value["bid"].Value, out result))
-				item.Bid = result;
-			else
-				item.Bid = -1;
-
-			if (int.TryParse(marketItem.Value["ask"].Value, out result))
-				item.Ask = result;
-			else
-				item.Ask = -1;
-
-			container.Items.Add(item);
-		}
+		return false;
 	}
 }
