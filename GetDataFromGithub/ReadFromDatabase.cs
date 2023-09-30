@@ -15,8 +15,11 @@ namespace GetDataFromGithub
 		{
 			var history = new Dictionary<string, ItemHistory>();
 
+			SQLitePCL.Batteries.Init();
+
 			using (var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly"))
 			{
+				
 				connection.Open();
 
 				var getAllAsk = connection.CreateCommand();
