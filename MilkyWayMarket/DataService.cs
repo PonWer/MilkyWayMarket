@@ -61,14 +61,15 @@ namespace MilkyWayMarket
 
 			path = $@"{System.IO.Path.GetTempPath()}MilkyWayMarket.db";
 
-			//var latest = await GetDeployments.Call(1, 0);
+			var latest = await GetDeployments.Call(1, 0);
 			latestDeploymentFound = true;
 			DataUpdated?.Invoke(null, string.Empty);
 
-			//await GetCommitData.Call(latest.First(),path);
+			await GetCommitData.Call(latest.First(),path);
 			dbDownloaded = true;
 			DataUpdated?.Invoke(null, string.Empty);
 
+			Console.WriteLine(path);
 			history = await ReadFromDatabase.Call(path, DataUpdated);
 			databaseParced = true;
 			DataUpdated?.Invoke(null, string.Empty);
