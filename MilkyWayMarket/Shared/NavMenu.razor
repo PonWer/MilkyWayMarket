@@ -1,12 +1,7 @@
-﻿@using RestSharp
-@inject IDataService DataService
-
-@inject IHttpClientFactory HttpClient
-@inject RestClient RestClient
+﻿@inject IDataService DataService
 
 <MudNavMenu>
 	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-	<MudNavLink Href="DataPoints" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">DataPoints</MudNavLink>
 </MudNavMenu>
 
 @code {
@@ -14,8 +9,6 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		SQLitePCL.Batteries.Init();
-
-		await DataService.Init(RestClient,HttpClient.Resolve("github"));
+		await DataService.Init();
 	}
 }

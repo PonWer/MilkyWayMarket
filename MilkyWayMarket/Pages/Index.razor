@@ -20,16 +20,7 @@
 }
 else if (!@DataService.Initiated)
 {
-	@if (!@DataService.LatestDeploymentFound)
-	{
-		<MudText Typo="Typo.h6">Looking for latest deployment to holychikenz/MWIApi</MudText>
-	}
-	else if (!@DataService.DbDownloaded)
-	{
-		<MudText Typo="Typo.h6">downloading database to @DataService.DatabasePath</MudText>
-	}
-	else
-	{
+
 		<MudText Typo="Typo.h6">@dataUpdatedMessage</MudText>@* 
 		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
 		<MudText Typo="Typo.h6">@DataService.DataPoints.Count / @DataService.DataPointsToFetch</MudText>
@@ -37,7 +28,7 @@ else if (!@DataService.Initiated)
 		{
 			<MudText Typo="Typo.h6">Latest fetched: @DataService.DataPoints.First().Date.Value</MudText>
 		} *@
-	}
+	
 }
 else
 {
