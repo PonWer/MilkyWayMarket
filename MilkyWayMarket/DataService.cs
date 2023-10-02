@@ -2,6 +2,7 @@
 using MilkyWayMarket.Code;
 using MudBlazor;
 using System.IO;
+using RestSharp;
 using static MilkyWayMarket.DataService;
 
 namespace MilkyWayMarket
@@ -21,7 +22,7 @@ namespace MilkyWayMarket
 
 		string DatabasePath { get; }
 
-		Task Init();
+		Task Init(RestClient restClient, HttpClient httpClient);
 	}
 	public class DataService : IDataService
 	{
@@ -54,18 +55,20 @@ namespace MilkyWayMarket
 
 		public string DatabasePath => path;
 
-		public async Task Init()
+		public async Task Init(RestClient restClient, HttpClient httpClient)
 		{
 			if(initiated)
 				return;
 
 			path = $@"{System.IO.Path.GetTempPath()}MilkyWayMarket.db";
 
-			var latest = await GetDeployments.Call(1, 0);
+			return;
+
+			var latest = await GetDeployments.Call(restClient,1, 0);
 			latestDeploymentFound = true;
 			DataUpdated?.Invoke(null, string.Empty);
 
-			await GetCommitData.Call(latest.First(),path);
+			await GetCommitData.Call(httpClient,latest.First(),path);
 			dbDownloaded = true;
 			DataUpdated?.Invoke(null, string.Empty);
 
