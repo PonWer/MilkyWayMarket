@@ -1,12 +1,9 @@
 ﻿using MilkyWayMarket.Code;
-using MudBlazor;
 
 namespace MilkyWayMarket
 {
 	public interface IDataService
 	{
-		MudTheme CurrentTheme { get; set; }
-
 		Dictionary<string, ItemHistory> History { get; }
 		List<string> HistoryKeys { get; }
 		event EventHandler<string> DataUpdated;
@@ -19,18 +16,11 @@ namespace MilkyWayMarket
 	{
 		private bool initiated = false;
 
-		private MudTheme _currentTheme;
-
 		private Dictionary<string, ItemHistory> history = new Dictionary<string, ItemHistory>();
 		private List<string> historyKeys = new List<string>();
 
 		public event EventHandler<string> DataUpdated;
 		
-		public MudTheme CurrentTheme
-		{
-			get => _currentTheme;
-			set => _currentTheme = value;
-		}
 
 		public Dictionary<string, ItemHistory> History => history;
 		public List<string> HistoryKeys => historyKeys;
