@@ -1,53 +1,49 @@
-﻿using MilkyWayMarket.Code;
-using MudBlazor;
+﻿using System.Net.Http.Json;
+using MilkyWayMarket.Code;
+using Newtonsoft.Json.Linq;
+using static System.Net.WebRequestMethods;
 
-namespace MilkyWayMarket
+namespace MilkyWayMarket;
+
+public interface IDataService
 {
-	public interface IDataService
+	Dictionary<string, ItemHistory> History { get; }
+	List<string> HistoryKeys { get; }
+
+	bool Initiated { get; }
+	event EventHandler<string> DataUpdated;
+
+	Task Init(HttpClient httpClient);
+}
+
+public class DataService : IDataService
+{
+	public event EventHandler<string> DataUpdated;
+	
+	public Dictionary<string, ItemHistory> History { get; } = new();
+
+	public List<string> HistoryKeys { get; private set; } = new();
+
+	public bool Initiated { get; private set; }
+
+	public async Task Init(HttpClient httpClient)
 	{
-		MudTheme CurrentTheme { get; set; }
+		if (Initiated)
+			return;
 
-		Dictionary<string, ItemHistory> History { get; }
-		List<string> HistoryKeys { get; }
-		event EventHandler<string> DataUpdated;
+		var jsonString = await httpClient.GetStringAsync("milkyapi.json");
 
-		bool Initiated { get; }
+		var o = JObject.Parse(jsonString);
 
-		Task Init();
-	}
-	public class DataService : IDataService
-	{
-		private bool initiated = false;
-
-		private MudTheme _currentTheme;
-
-		private Dictionary<string, ItemHistory> history = new Dictionary<string, ItemHistory>();
-		private List<string> historyKeys = new List<string>();
-
-		public event EventHandler<string> DataUpdated;
-		
-		public MudTheme CurrentTheme
+		foreach (var key in o.First.Values<JObject>())
 		{
-			get => _currentTheme;
-			set => _currentTheme = value;
+			foreach (var property in key.Properties())
+			{
+				HistoryKeys.Add(property.Name);
+			}
 		}
 
-		public Dictionary<string, ItemHistory> History => history;
-		public List<string> HistoryKeys => historyKeys;
-
-		public bool Initiated => initiated;
-
-		public async Task Init()
-		{
-			if(initiated)
-				return;
-
-			historyKeys = history.Keys.ToList();
-
-            initiated = true;
-            DataUpdated?.Invoke(null, string.Empty);
-		}
+		Initiated = true;
+		DataUpdated?.Invoke(null, string.Empty);
 	}
-
-
 }

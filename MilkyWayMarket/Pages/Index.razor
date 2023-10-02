@@ -1,6 +1,14 @@
 ﻿@page "/"
-@using System.Globalization
 @inject IDataService DataService
+@inject IJSRuntime JSRuntime
+
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject ContextMenuService ContextMenuService
+@inject TooltipService TooltipService
+@inject NotificationService NotificationService
+
+<PageTitle>Index</PageTitle>
 
 @if (true)
 {
@@ -8,119 +16,42 @@
 
 	<div id="mainMooket">Cow say moo!</div>
 	<textarea id="query" name="query" rows=10 cols=50>
-	SELECT DATETIME(time,"unixepoch") AS time, 
-	"Holy Cheese", "Holy Milk",
-	("Holy Cheese" - "Holy Milk"*2) AS "Margin"
-	FROM ask
-	</textarea>
-	<br />
+			SELECT DATETIME(time,"unixepoch") AS time, 
+			"Holy Cheese", "Holy Milk",
+			("Holy Cheese" - "Holy Milk"*2) AS "Margin"
+			FROM ask
+			</textarea>
+	<br/>
 	<button id="datago">Query</button>
 	<div id="plot" style="display:flex;"></div>
 
-}
-else if (!@DataService.Initiated)
-{
-
-		<MudText Typo="Typo.h6">@dataUpdatedMessage</MudText>@* 
-		<MudProgressLinear Color="Color.Primary" Value="@DataService.DataPoints.Count" Min="0" Max="@DataService.DataPointsToFetch" Class="my-7" />
-		<MudText Typo="Typo.h6">@DataService.DataPoints.Count / @DataService.DataPointsToFetch</MudText>
-		@if (@DataService.DataPoints.Any())
-		{
-			<MudText Typo="Typo.h6">Latest fetched: @DataService.DataPoints.First().Date.Value</MudText>
-		} *@
-	
-}
-else
-{
-	<div>
-		@* 	<MudSelect Margin="Margin.Dense" T="string" Label="Coffee" Variant="Variant.Text" bind-Value="selectedItem">
-	@foreach (var item in DataService.HistoryKeys)
-	{
-	<MudSelectItem Value="@item">@item</MudSelectItem>
 	}
-	</MudSelect> *@
-
-		<MudItem xs="12" sm="6" md="4">
-			<MudAutocomplete T="string" Label="Item" @bind-Value="selectedItem"
-							 SearchFunc="@Search" dornmentIcon="@Icons.Material.Filled.Search"
-							 AdornmentColor="Color.Primary" />
-			<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ButtonClicked">View</MudButton>
-		</MudItem>
+	else if (!@DataService.Initiated)
+	{
 
 
-
-		<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="i" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
-		<MudText Typo="Typo.h6">Selected portion of the chart: @i</MudText>
+	}
+	else
+	{
+	<div>
 	</div>
+	}
+
+
 
 	@code {
-	private int i = -1; //default value cannot be 0 -> first selectedindex is 0.
-	public List<ChartSeries> Series = new List<ChartSeries>();
-	public string[] XAxisLabels = Array.Empty<string>();
-	private string selectedItem;
-	private string dataUpdatedMessage;
+		private string selectedItem;
+		private string dataUpdatedMessage;
 
-	private async Task<IEnumerable<string>> Search(string value)
-	{
-		while (!DataService.Initiated)
+
+		protected override async Task OnInitializedAsync()
 		{
-			// In real life use an asynchronous function for fetching data from an api.
-			await Task.Delay(5);
+			DataService.DataUpdated += (sender, message) =>
+			{
+				dataUpdatedMessage = message;
+				StateHasChanged();
+			};
 		}
 
-		// if text is null or empty, don't return values (drop-down will not open)
-		return string.IsNullOrEmpty(value) ?
-			DataService.HistoryKeys :
-			DataService.HistoryKeys.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
 	}
 
-	private void ButtonClicked()
-	{
-		if (string.IsNullOrWhiteSpace(selectedItem))
-			return;
-
-		var itemHistory = DataService.History[selectedItem];
-
-		var new_series = new List<ChartSeries>()
-		{
-			new ChartSeries() { Name = "Ask", Data = new double[itemHistory.history.Count] },
-			new ChartSeries() { Name = "Bid", Data = new double[itemHistory.history.Count] },
-		};
-
-		XAxisLabels = new string[itemHistory.history.Count];
-		var latestDate = string.Empty;
-
-		for (int i = 0; i < itemHistory.history.Count; i++)
-		{
-			new_series[0].Data[i] = itemHistory.history.ElementAt(i).Value.Ask;
-			new_series[1].Data[i] = itemHistory.history.ElementAt(i).Value.Bid;
-			var shortDateString = itemHistory.history.ElementAt(i).Key.ToString("dd/M", CultureInfo.InvariantCulture);
-
-			if (shortDateString != latestDate)
-			{
-				latestDate = shortDateString;
-				XAxisLabels[i] = shortDateString;
-			}
-			else
-			{
-				XAxisLabels[i] = string.Empty;
-			}
-
-
-		}
-		Series = new_series;
-		StateHasChanged();
-	}
-
-	protected override async Task OnInitializedAsync()
-	{
-		DataService.DataUpdated += (sender, message) =>
-		{
-			dataUpdatedMessage = message;
-			StateHasChanged();
-		};
-	}
-}
-
-
-}
