@@ -21,36 +21,37 @@
 			("Holy Cheese" - "Holy Milk"*2) AS "Margin"
 			FROM ask
 			</textarea>
-	<br />
+	<br/>
 	<button id="datago">Query</button>
 	<div id="plot" style="display:flex;"></div>
 
-}
-else if (!@DataService.Initiated)
-{
+	}
+	else if (!@DataService.Initiated)
+	{
 
 
-}
-else
-{
+	}
+	else
+	{
 	<div>
 	</div>
-}
-
-
-
-@code {
-	private string selectedItem;
-	private string dataUpdatedMessage;
-
-
-	protected override async Task OnInitializedAsync()
-	{
-		DataService.DataUpdated += (sender, message) =>
-		{
-			dataUpdatedMessage = message;
-			StateHasChanged();
-		};
 	}
 
-}
+
+
+	@code {
+		private string selectedItem;
+		private string dataUpdatedMessage;
+
+
+		protected override async Task OnInitializedAsync()
+		{
+			DataService.DataUpdated += (sender, message) =>
+			{
+				dataUpdatedMessage = message;
+				StateHasChanged();
+			};
+		}
+
+	}
+

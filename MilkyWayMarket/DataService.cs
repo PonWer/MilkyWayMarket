@@ -1,43 +1,37 @@
 ﻿using MilkyWayMarket.Code;
 
-namespace MilkyWayMarket
+namespace MilkyWayMarket;
+
+public interface IDataService
 {
-	public interface IDataService
+	Dictionary<string, ItemHistory> History { get; }
+	List<string> HistoryKeys { get; }
+
+	bool Initiated { get; }
+	event EventHandler<string> DataUpdated;
+
+	Task Init();
+}
+
+public class DataService : IDataService
+{
+	public event EventHandler<string> DataUpdated;
+
+
+	public Dictionary<string, ItemHistory> History { get; } = new();
+
+	public List<string> HistoryKeys { get; private set; } = new();
+
+	public bool Initiated { get; private set; }
+
+	public async Task Init()
 	{
-		Dictionary<string, ItemHistory> History { get; }
-		List<string> HistoryKeys { get; }
-		event EventHandler<string> DataUpdated;
+		if (Initiated)
+			return;
 
-		bool Initiated { get; }
+		HistoryKeys = History.Keys.ToList();
 
-		Task Init();
+		Initiated = true;
+		DataUpdated?.Invoke(null, string.Empty);
 	}
-	public class DataService : IDataService
-	{
-		private bool initiated = false;
-
-		private Dictionary<string, ItemHistory> history = new Dictionary<string, ItemHistory>();
-		private List<string> historyKeys = new List<string>();
-
-		public event EventHandler<string> DataUpdated;
-		
-
-		public Dictionary<string, ItemHistory> History => history;
-		public List<string> HistoryKeys => historyKeys;
-
-		public bool Initiated => initiated;
-
-		public async Task Init()
-		{
-			if(initiated)
-				return;
-
-			historyKeys = history.Keys.ToList();
-
-            initiated = true;
-            DataUpdated?.Invoke(null, string.Empty);
-		}
-	}
-
-
 }
