@@ -6,7 +6,7 @@ namespace MilkyWayMarket.Code;
 
 public static class GetCommitData
 {
-	public static async Task<bool> Call(Container container, string path)
+	public static async Task<bool> Call(HttpClient httpClient,Container container, string path)
 	{
 		for (var i = 0; i < 3; i++)
 		{
@@ -16,8 +16,7 @@ public static class GetCommitData
 				//var marketapi = $"https://raw.githubusercontent.com/holychikenz/MWIApi/{container.Commit}/milkyapi.json";
 				//var medianmarket = $"https://raw.githubusercontent.com/holychikenz/MWIApi/{container.Commit}/medianmarket.json";
 
-				using var httpClient = new HttpClient();
-
+				
 				var response_marketapi = await httpClient.GetAsync(marketDb);
 				//var response_medianmarket = httpClient.GetAsync(medianmarket).Result;
 

@@ -1,4 +1,8 @@
-﻿@inject IDataService DataService
+﻿@using RestSharp
+@inject IDataService DataService
+
+@inject IHttpClientFactory HttpClient
+@inject RestClient RestClient
 
 <MudNavMenu>
 	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
@@ -12,6 +16,6 @@
 	{
 		SQLitePCL.Batteries.Init();
 
-		await DataService.Init();
+		await DataService.Init(RestClient,HttpClient.Resolve("github"));
 	}
 }

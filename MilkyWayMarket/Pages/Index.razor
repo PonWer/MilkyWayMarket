@@ -2,7 +2,23 @@
 @using System.Globalization
 @inject IDataService DataService
 
-@if (!@DataService.Initiated)
+@if (true)
+{
+	<!DOCTYPE html>
+
+	<div id="mainMooket">Cow say moo!</div>
+	<textarea id="query" name="query" rows=10 cols=50>
+	SELECT DATETIME(time,"unixepoch") AS time, 
+	"Holy Cheese", "Holy Milk",
+	("Holy Cheese" - "Holy Milk"*2) AS "Margin"
+	FROM ask
+	</textarea>
+	<br />
+	<button id="datago">Query</button>
+	<div id="plot" style="display:flex;"></div>
+
+}
+else if (!@DataService.Initiated)
 {
 	@if (!@DataService.LatestDeploymentFound)
 	{

@@ -7,10 +7,29 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NPMJs\**" />
+    <Content Remove="NPMJs\**" />
+    <EmbeddedResource Remove="NPMJs\**" />
+    <None Remove="NPMJs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="e_sqlite3.o" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\dist\03e1cd6585d66bccd5ba.js" />
+    <None Include="wwwroot\dist\8c500ff8a49b305f9ab6.js" />
+    <None Include="wwwroot\dist\c74ad46623e4ee643959.wasm" />
+    <None Include="wwwroot\dist\sql-httpvfs.js" />
+    <None Include="wwwroot\dist\sql-httpvfs.js.LICENSE.txt" />
+    <None Include="wwwroot\src\index.ts" />
+    <None Include="wwwroot\src\mooket.js" />
+    <None Include="wwwroot\webpack.config.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.11" PrivateAssets="all" />
     <PackageReference Include="MudBlazor" Version="6.10.0" />
