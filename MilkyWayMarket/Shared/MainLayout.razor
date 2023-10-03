@@ -1,8 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
+@using Newtonsoft.Json
+@implements IAsyncDisposable
+
 @inject IDataService DataService
 @inject HttpClient HttpClient;
 @inject IJSRuntime JSRuntime
+
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject ContextMenuService ContextMenuService
@@ -42,27 +46,71 @@
 		</RadzenPanelMenu>
 		<RadzenStack AlignItems="AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
 			<RadzenText Text="Studio v1.0.0" TextStyle="TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
-			<RadzenText Text="Copyright Ⓒ 2023" TextStyle="TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
+			<RadzenText Text="@query" TextStyle="TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
 		</RadzenStack>
 	</RadzenSidebar>
 </RadzenLayout>
 
 @code {
+	string query = string.Empty;
 	bool sidebarExpanded = true;
+	IJSObjectReference module;
+	IJSObjectReference database;
+	IJSObjectReference mooket;
 
 	void SidebarToggleClick()
 	{
 		sidebarExpanded = !sidebarExpanded;
 	}
 
-
-
-
 	protected override async Task OnInitializedAsync()
 	{
-		await DataService.Init(HttpClient);
+		var databaseURL = "https://holychikenz.github.io/MWIApi/market.db";
+		
+		module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./dist/sql-httpvfs.js");
+		database = await module.InvokeAsync<IJSObjectReference>("load", databaseURL);
+		mooket = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./src/mooket.js");
+
+		var objectReference = DotNetObjectReference.Create(this);
+		
+		await DataService.Init(HttpClient, mooket, database, objectReference);
 	}
 
+	[JSInvokable("ReceiveDataFromQuery")]
+	public void ReceiveDataFromQuery(string array)
+	{
+		Console.Write(array.Replace("\r", "").Replace("\n", ""));
+		query = array;
+		var weatherForecast = JsonConvert.DeserializeObject<QueryResults>(array);
 
 
+		foreach (var resultRow in weatherForecast.values)
+		{
+			var dateTime = DateTime.Parse(resultRow[0]);
+			for (int i = 1; i < resultRow.Count; i++)
+			{
+				DataService.ReceiveData(
+					weatherForecast.columns[i], 
+					true,
+					dateTime, 
+					double.Parse(resultRow[i]));
+			}
+		}
+		
+		StateHasChanged();
+	}
+
+	async ValueTask IAsyncDisposable.DisposeAsync()
+	{
+		if (module is not null)
+		{
+			await module.DisposeAsync();
+		}
+	}
+
+	public class QueryResults
+	{
+		public List<string> columns { get; set; }
+		public List<List<string>> values { get; set; }
+	}
 }
