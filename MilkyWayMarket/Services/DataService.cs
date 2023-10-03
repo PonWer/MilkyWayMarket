@@ -1,6 +1,4 @@
-﻿using System.Net.Http.Json;
-using Newtonsoft.Json.Linq;
-using static System.Net.WebRequestMethods;
+﻿using Newtonsoft.Json.Linq;
 
 namespace MilkyWayMarket.Services;
 
@@ -13,6 +11,8 @@ public interface IDataService
     event EventHandler<string> DataUpdated;
 
     Task Init(HttpClient httpClient);
+
+    void ReceiveData(string itemName, bool isAsk, DateTime date, double value);
 }
 
 public class DataService : IDataService
@@ -45,4 +45,32 @@ public class DataService : IDataService
         Initiated = true;
         DataUpdated?.Invoke(null, string.Empty);
     }
+
+    public void ReceiveData(string itemName, bool isAsk, DateTime date, double value)
+    {
+	    History.TryAdd(itemName, new ItemHistory());
+
+	    History[itemName].history.TryAdd(date,new Item());
+
+	    if (isAsk)
+	    {
+		    History[itemName].history[date].Ask = value;
+	    }
+	    else
+	    {
+			History[itemName].history[date].Bid = value;
+		}
+
+        Console.WriteLine($"Data received for {itemName} isAsk:{isAsk} {date} {value}");
+    }
+}
+public class ItemHistory
+{
+	public Dictionary<DateTime, Item> history = new();
+}
+public class Item
+{
+	public double Ask { get; set; } = -1;
+
+	public double Bid { get; set; } = -1;
 }

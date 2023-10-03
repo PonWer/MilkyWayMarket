@@ -1,22 +1,17 @@
-export async function query(database, query) {
-
-    console.log(query);
-
-    const result = database.db.exec(query).then();
-
-    console.log(result);
-
-    return result;
+export async function query(database, query, dotNetHelper)
+{
+    const result = await database.db.exec(query).then();
+    dotNetHelper.invokeMethodAsync('ReceiveDataFromQuery', JSON.stringify(result[0], null, 2)).then();
 }
 
-export async function GetListOfMethodsOfObject(object) {
 
-    if (object == null)
-        alert("object is null")
 
-    var propertyNames = Object.getOwnPropertyNames(object);
+export async function GetColums(queryResult) {
 
-    console.log(propertyNames);
+    if (queryResult == null) {
+        console.log("queryResult == null");
+        return;
+    }
 
-    return propertyNames;
+    return queryResult.Colums;
 }
