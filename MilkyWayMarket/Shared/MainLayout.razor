@@ -56,6 +56,7 @@
 	bool sidebarExpanded = true;
 	IJSObjectReference module;
 	IJSObjectReference database;
+	IJSObjectReference mooket;
 
 	void SidebarToggleClick()
 	{
@@ -64,20 +65,15 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		await DataService.Init(HttpClient);
-
 		var databaseURL = "https://holychikenz.github.io/MWIApi/market.db";
-		var query = "SELECT DATETIME(time,\"unixepoch\") AS time, " +
-					"\"Holy Cheese\", \"Holy Milk\",(\"Holy Cheese\" - \"Holy Milk\"*2) AS \"Margin\" " +
-					"FROM ask " +
-		            "LIMIT 10";
+		
 		module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./dist/sql-httpvfs.js");
 		database = await module.InvokeAsync<IJSObjectReference>("load", databaseURL);
-
-		var mooket = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./src/mooket.js");
+		mooket = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./src/mooket.js");
 
 		var objectReference = DotNetObjectReference.Create(this);
-		await mooket.InvokeVoidAsync("query", database, query, objectReference);
+		
+		await DataService.Init(HttpClient, mooket, database, objectReference);
 	}
 
 	[JSInvokable("ReceiveDataFromQuery")]

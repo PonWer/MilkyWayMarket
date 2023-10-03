@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop.Implementation;
+using MilkyWayMarket.Shared;
+using Newtonsoft.Json.Linq;
 
 namespace MilkyWayMarket.Services;
 
@@ -10,14 +13,18 @@ public interface IDataService
     bool Initiated { get; }
     event EventHandler<string> DataUpdated;
 
-    Task Init(HttpClient httpClient);
+    Task Query(List<string> items);
 
-    void ReceiveData(string itemName, bool isAsk, DateTime date, double value);
+	void ReceiveData(string itemName, bool isAsk, DateTime date, double value);
+    Task Init(HttpClient httpClient, IJSObjectReference inMooket, IJSObjectReference inDatabase, DotNetObjectReference<MainLayout> dotNetObjectReference);
 }
 
 public class DataService : IDataService
 {
-    public event EventHandler<string> DataUpdated;
+	private IJSObjectReference dataBase;
+	private IJSObjectReference mooket;
+	private DotNetObjectReference<MainLayout> dotNetObjectReferenceMailLayout;
+	public event EventHandler<string> DataUpdated;
 
     public Dictionary<string, ItemHistory> History { get; } = new();
 
@@ -25,12 +32,16 @@ public class DataService : IDataService
 
     public bool Initiated { get; private set; }
 
-    public async Task Init(HttpClient httpClient)
+    public async Task Init(HttpClient httpClient, IJSObjectReference inMooket, IJSObjectReference inDatabase, DotNetObjectReference<MainLayout> dotNetObjectReference)
     {
         if (Initiated)
             return;
 
-        var jsonString = await httpClient.GetStringAsync("milkyapi.json");
+        mooket = inMooket;
+        dataBase = inDatabase;
+        dotNetObjectReferenceMailLayout = dotNetObjectReference;
+        
+		var jsonString = await httpClient.GetStringAsync("milkyapi.json");
 
         var o = JObject.Parse(jsonString);
 
@@ -44,7 +55,30 @@ public class DataService : IDataService
 
         Initiated = true;
         DataUpdated?.Invoke(null, string.Empty);
-    }
+	}
+	public async Task Query(List<string> items)
+	{
+		var itemsToLoad = new List<string>();
+		foreach (var item in items)
+		{
+			if (!History.ContainsKey(item))
+			{
+				itemsToLoad.Add(item);
+			}
+		}
+
+		if (!itemsToLoad.Any())
+			return;
+
+		var query = "SELECT DATETIME(time,\"unixepoch\") AS time, " +
+		            string.Join(",",itemsToLoad.Select(x => $"\"{x}\"")) +
+		            "FROM ask " +
+		            "LIMIT 10";
+
+		Console.WriteLine("12112121:::: " + query);
+
+		await mooket.InvokeVoidAsync("query", dataBase, query, dotNetObjectReferenceMailLayout);
+	}
 
     public void ReceiveData(string itemName, bool isAsk, DateTime date, double value)
     {

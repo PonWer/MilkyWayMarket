@@ -10,32 +10,87 @@
 
 <PageTitle>Index</PageTitle>
 
-if (!@DataService.Initiated)
+@if (!@DataService.Initiated)
+{
+
+
+}
+else
+{
+
+		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="3rem" Wrap="FlexWrap.Wrap" class="rz-p-12">
+			<RadzenDropDown @bind-Value=@selectectedValue
+			                Data=@items
+			                TextProperty="ItemName"
+			                ValueProperty="ItemIndex"
+			                Multiple=true
+			                AllowClear=true
+			                AllowFiltering="true"
+			                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+			                Placeholder="Select products"
+			                Chips=true
+			                Style="width: 100%; max-width: 400px;" />
+			<RadzenButton style="width: 160px" Icon="save" BusyText="Saving ..." IsBusy=@busy Click=@OnBusyClick Text="Save" />
+		</RadzenStack>
+}
+
+@code {
+	IList<int> selectectedValue = new int[] { };
+	List<itemKey> items = new List<itemKey>();
+
+	private string selectedItem;
+	private string dataUpdatedMessage;
+
+	bool busy;
+    
+	async Task OnBusyClick()
 	{
+		if (!selectectedValue.Any())
+			return;
 
-
+		busy = true;
+		await DataService.Query(selectectedValue.Select(x => items[x].ItemName).ToList());
+		busy = false;
 	}
-	else
+	
+	protected override async Task OnInitializedAsync()
 	{
-	<div>
-	</div>
-	}
-
-
-
-	@code {
-		private string selectedItem;
-		private string dataUpdatedMessage;
-
-
-		protected override async Task OnInitializedAsync()
+		DataService.DataUpdated += (sender, message) =>
 		{
-			DataService.DataUpdated += (sender, message) =>
-			{
-				dataUpdatedMessage = message;
-				StateHasChanged();
-			};
+			dataUpdatedMessage = message;
+			UpdateList();
+
+			StateHasChanged();
+		};
+
+		UpdateList();
+	}
+
+	protected void UpdateList()
+	{
+		if (items.Any())
+			return;
+
+		items.Clear();
+		foreach (var key in DataService.HistoryKeys)
+		{
+			items.Add(new itemKey()
+				{
+					ItemIndex = items.Count,
+					ItemName = key
+				});
 		}
+
+		Console.WriteLine($"keys: {items.Count}");
+	}
+
+	public class itemKey
+	{
+		public string ItemName { get; set; }
+		public int ItemIndex { get; set; }
+		public bool IsDisabled { get { return false; } }
+	}
+}
 
 	}
 
