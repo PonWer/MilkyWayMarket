@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MilkyWayMarket;
+using MilkyWayMarket.Services;
 using Radzen;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

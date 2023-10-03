@@ -1,8 +1,11 @@
 ﻿@inherits LayoutComponentBase
 
+@implements IAsyncDisposable
+
 @inject IDataService DataService
 @inject HttpClient HttpClient;
 @inject IJSRuntime JSRuntime
+
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject ContextMenuService ContextMenuService
@@ -49,20 +52,39 @@
 
 @code {
 	bool sidebarExpanded = true;
+	IJSObjectReference module;
+	IJSObjectReference database;
 
 	void SidebarToggleClick()
 	{
 		sidebarExpanded = !sidebarExpanded;
 	}
 
-
-
-
 	protected override async Task OnInitializedAsync()
 	{
-		await DataService.Init(HttpClient);
+		var databaseURL = "https://holychikenz.github.io/MWIApi/market.db";
+		var query = "SELECT DATETIME(time,\"unixepoch\") AS time, " +
+					"\"Holy Cheese\", \"Holy Milk\",(\"Holy Cheese\" - \"Holy Milk\"*2) AS \"Margin\" " +
+					"FROM ask";
+		module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./dist/sql-httpvfs.js");
+		database = await module.InvokeAsync<IJSObjectReference>("load", databaseURL);
+		var result = await database.InvokeAsync<IJSObjectReference>("db", query);
+
+		// var mooket = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./src/mooket.js");
+
+		// var result1 = await mooket.InvokeAsync<IJSObjectReference>("GetListOfMethodsOfObject", module);
+		// Console.WriteLine(result1.ToString());
+		// var result = await mooket.InvokeAsync<IJSObjectReference>("query", database, query);
+		 Console.WriteLine(result);
+
+		//await DataService.Init(HttpClient);
 	}
 
-
-
+	async ValueTask IAsyncDisposable.DisposeAsync()
+	{
+		if (module is not null)
+		{
+			await module.DisposeAsync();
+		}
+	}
 }

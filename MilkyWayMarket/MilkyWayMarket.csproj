@@ -18,6 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Services\Container.cs" />
+    <Content Include="Services\DataService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="wwwroot\dist\03e1cd6585d66bccd5ba.js" />
     <None Include="wwwroot\dist\8c500ff8a49b305f9ab6.js" />
     <None Include="wwwroot\dist\c74ad46623e4ee643959.wasm" />
