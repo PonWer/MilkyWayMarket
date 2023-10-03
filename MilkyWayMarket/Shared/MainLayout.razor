@@ -20,12 +20,17 @@
 
 <RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
 	<RadzenHeader>
-		<RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
-			<RadzenColumn Size="5">
+		<RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Start" Gap="0">
+@* 			<RadzenColumn Size="5">
 				<RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
-			</RadzenColumn>
+			</RadzenColumn> *@
 			<RadzenColumn Size="7">
-				<RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End"></RadzenStack>
+				<RadzenStack AlignItems="AlignItems.Start" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+					<RadzenLabel Text="Milky Way Market" />
+				</RadzenStack>
+				<RadzenStack AlignItems="AlignItems.End" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+					<RadzenLabel Text="@dataUpdatedMessage" />
+				</RadzenStack>
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenHeader>
@@ -36,7 +41,7 @@
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenBody>
-	<RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
+@* 	<RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
 		<RadzenStack AlignItems="AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
 			<RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage>
 			<RadzenText Text="Studio" TextStyle="TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
@@ -48,11 +53,11 @@
 			<RadzenText Text="Studio v1.0.0" TextStyle="TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
 			<RadzenText Text="@query" TextStyle="TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
 		</RadzenStack>
-	</RadzenSidebar>
+	</RadzenSidebar> *@
 </RadzenLayout>
 
 @code {
-	string query = string.Empty;
+	private string dataUpdatedMessage;
 	bool sidebarExpanded = true;
 	IJSObjectReference module;
 	IJSObjectReference database;
@@ -65,6 +70,12 @@
 
 	protected override async Task OnInitializedAsync()
 	{
+		DataService.DataUpdated += (sender, message) =>
+		{
+			dataUpdatedMessage = message;
+			StateHasChanged();
+		};
+
 		var databaseURL = "https://holychikenz.github.io/MWIApi/market.db";
 		
 		module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./dist/sql-httpvfs.js");
@@ -79,23 +90,22 @@
 	[JSInvokable("ReceiveDataFromQuery")]
 	public void ReceiveDataFromQuery(string array)
 	{
-		Console.Write(array.Replace("\r", "").Replace("\n", ""));
-		query = array;
-		var weatherForecast = JsonConvert.DeserializeObject<QueryResults>(array);
+		var queryResults = JsonConvert.DeserializeObject<QueryResults>(array);
 
-
-		foreach (var resultRow in weatherForecast.values)
+		foreach (var resultRow in queryResults.values)
 		{
 			var dateTime = DateTime.Parse(resultRow[0]);
 			for (int i = 1; i < resultRow.Count; i++)
 			{
 				DataService.ReceiveData(
-					weatherForecast.columns[i], 
+					queryResults.columns[i], 
 					true,
 					dateTime, 
-					double.Parse(resultRow[i]));
+					string.IsNullOrWhiteSpace(resultRow[i]) ? -1 : double.Parse(resultRow[i]));
 			}
 		}
+
+		DataService.ReceivedDataComplete();
 		
 		StateHasChanged();
 	}

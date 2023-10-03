@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Globalization
 @inject IDataService DataService
 @inject IJSRuntime JSRuntime
 
@@ -10,55 +11,106 @@
 
 <PageTitle>Index</PageTitle>
 
-@if (!@DataService.Initiated)
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="3rem" Wrap="FlexWrap.Wrap" class="rz-p-12">
+	<RadzenDropDown @bind-Value=@selectectedValue
+					Data=@items
+					TextProperty="ItemName"
+					ValueProperty="ItemIndex"
+					Multiple=true
+					AllowClear=true
+					AllowFiltering="true"
+					FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+					Placeholder="Select items"
+					Chips=true
+					Disabled="@(!DataService.Initiated)"
+					Style="width: 100%; max-width: 400px;" />
+	<RadzenButton style="width: 160px" Icon="search" BusyText="Loading ..." IsBusy=@DataService.Busy Click=@OnBusyClick Text="Search" Disabled="@(!DataService.Initiated)" />
+</RadzenStack>
+
+<RadzenCard class="w-100 mb-4" Style="display: flex; align-items: center; gap: 0.5rem">
+	<RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox>
+	<RadzenLabel Text="Smooth" For="smooth" Style="margin-right: 1rem;" />
+	<RadzenCheckBox @bind-Value="@showDataLabels" Name="dataLabels"></RadzenCheckBox>
+	<RadzenLabel Text="Show Data Labels" For="dataLabels" />
+</RadzenCard>
+<RadzenChart>
+	@foreach (var data in dataSets)
+	{
+		<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Revenue">
+			<RadzenMarkers MarkerType="MarkerType.Square" />
+			<RadzenSeriesDataLabels Visible="@showDataLabels" />
+		</RadzenLineSeries>
+	}
+	<RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" Min="0" Step="1" />
+	<RadzenValueAxis Formatter="@FormatAsUSD">
+		<RadzenGridLines Visible="true" />
+		<RadzenAxisTitle Text="Revenue in USD" />
+	</RadzenValueAxis>
+</RadzenChart>
+
+@code
 {
-
-
-}
-else
-{
-
-		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="3rem" Wrap="FlexWrap.Wrap" class="rz-p-12">
-			<RadzenDropDown @bind-Value=@selectectedValue
-			                Data=@items
-			                TextProperty="ItemName"
-			                ValueProperty="ItemIndex"
-			                Multiple=true
-			                AllowClear=true
-			                AllowFiltering="true"
-			                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-			                Placeholder="Select products"
-			                Chips=true
-			                Style="width: 100%; max-width: 400px;" />
-			<RadzenButton style="width: 160px" Icon="save" BusyText="Saving ..." IsBusy=@busy Click=@OnBusyClick Text="Save" />
-		</RadzenStack>
-}
-
-@code {
 	IList<int> selectectedValue = new int[] { };
+	Dictionary<string, List<DataItem>> dataSets = new Dictionary<string, List<DataItem>>();
 	List<itemKey> items = new List<itemKey>();
 
-	private string selectedItem;
-	private string dataUpdatedMessage;
+	bool smooth = false;
+	bool showDataLabels = false;
 
-	bool busy;
-    
+	class DataItem
+	{
+		public string Date { get; set; }
+		public double Revenue { get; set; }
+	}
+
+	string FormatAsUSD(object value)
+	{
+		return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+	}
+
+	string FormatAsMonth(object value)
+	{
+		if (value != null)
+		{
+			return Convert.ToDateTime(value).ToString("MMM");
+		}
+
+		return string.Empty;
+	}
+
 	async Task OnBusyClick()
 	{
 		if (!selectectedValue.Any())
 			return;
 
-		busy = true;
 		await DataService.Query(selectectedValue.Select(x => items[x].ItemName).ToList());
-		busy = false;
 	}
-	
+
 	protected override async Task OnInitializedAsync()
 	{
 		DataService.DataUpdated += (sender, message) =>
 		{
-			dataUpdatedMessage = message;
 			UpdateList();
+
+			if (!DataService.Busy)
+			{
+				dataSets.Clear();
+				foreach (var selected in selectectedValue)
+				{
+					var key = items[selected].ItemName;
+					var list = new List<DataItem>();
+					foreach (var itemHistory in DataService.History[key].history)
+					{
+						list.Add(new DataItem()
+						{
+							Date = itemHistory.Key.ToString(), 
+							Revenue = itemHistory.Value.Ask,
+						});
+					}
+					dataSets.Add(key,list);
+				}
+			}
 
 			StateHasChanged();
 		};
@@ -91,6 +143,4 @@ else
 		public bool IsDisabled { get { return false; } }
 	}
 }
-
-	}
 
