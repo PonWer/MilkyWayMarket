@@ -1,18 +1,10 @@
 ﻿@page "/"
 @using System.Globalization
 @inject IDataService DataService
-@inject IJSRuntime JSRuntime
-
-@inject NavigationManager NavigationManager
-@inject DialogService DialogService
-@inject ContextMenuService ContextMenuService
-@inject TooltipService TooltipService
-@inject NotificationService NotificationService
 
 <PageTitle>Index</PageTitle>
 
-
-<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="3rem" Wrap="FlexWrap.Wrap" class="rz-p-12">
+<RadzenRow JustifyContent="JustifyContent.Normal" AlignItems="AlignItems.Center" Gap="1rem" class="rz-border-info-light">
 	<RadzenDropDown @bind-Value=@selectectedValue
 					Data=@items
 					TextProperty="ItemName"
@@ -26,75 +18,64 @@
 					Disabled="@(!DataService.Initiated)"
 					Style="width: 100%; max-width: 400px;" />
 	<RadzenButton style="width: 160px" Icon="search" BusyText="Loading ..." IsBusy=@DataService.Busy Click=@OnBusyClick Text="Search" Disabled="@(!DataService.Initiated)" />
-</RadzenStack>
+</RadzenRow>
+<RadzenRow JustifyContent="JustifyContent.Normal" AlignItems="AlignItems.Center" Gap="1rem" class="rz-border-info-light">
+	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
+		<RadzenText Text="Start Date" class="rz-text-capitalize" />
+		<RadzenDatePicker @bind-Value=@startDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
+	</RadzenStack>
 
-<RadzenStack AlignItems="AlignItems.Center" Class="rz-p-sm-12">
-	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-		<RadzenSwitch Value="@smooth" Disabled="@(!DataService.Initiated)" />
-		<RadzenLabel Text="Smooth lines" />
-	</RadzenStack>
-	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-		<RadzenSwitch Value="@showDataLabels" Disabled="@(!DataService.Initiated)" />
-		<RadzenLabel Text="Show Data Labels" />
-	</RadzenStack>
-</RadzenStack>
-
-<RadzenStack AlignItems="AlignItems.Center" Class="rz-p-sm-12">
-	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-		<RadzenDatePicker @bind-Value=@startDate Change="@DateRangeChanged"  InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
-	</RadzenStack>
-	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
+		<RadzenText Text="End Date" class="rz-text-capitalize" />
 		<RadzenDatePicker @bind-Value=@endDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
 	</RadzenStack>
-</RadzenStack>
 
+	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
+		<RadzenText Text="Smooth lines" class="rz-text-capitalize" />
+		<RadzenSwitch @bind-Value=@smooth Disabled="@(!DataService.Initiated)" Change="SettingsChangedCallback" />
+	</RadzenStack>
 
-<RadzenChart>
-	@foreach (var data in dataSets)
-	{
-		<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Revenue">
-			<RadzenMarkers MarkerType="MarkerType.Square" />
-			<RadzenSeriesDataLabels Visible="@showDataLabels" />
-		</RadzenLineSeries>
-	}
-	<RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" />
-	<RadzenValueAxis>
-		<RadzenGridLines Visible="true" />
-		<RadzenAxisTitle Text="Ask" />
-	</RadzenValueAxis>
-</RadzenChart>
+	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
+		<RadzenText Text="Show Data Labels" class="rz-text-capitalize" />
+		<RadzenSwitch @bind-Value=@showDataLabels Disabled="@(!DataService.Initiated)" Change="SettingsChangedCallback" />
+	</RadzenStack>
+</RadzenRow>
 
+@if (items.Any())
+{
+	<RadzenChart>
+		@foreach (var data in dataSets)
+		{
+			<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Revenue">
+				<RadzenMarkers MarkerType="MarkerType.Square"/>
+				<RadzenSeriesDataLabels Visible="@showDataLabels"/>
+			</RadzenLineSeries>
+		}
+		<RadzenCategoryAxis Padding="20"/>
+		<RadzenValueAxis Min="0" Step="@StepValue">
+			<RadzenGridLines Visible="true"/>
+			<RadzenAxisTitle Text="Ask"/>
+		</RadzenValueAxis>
+	</RadzenChart>
+}
 @code
 {
-	DateTime startDate = DateTime.Now;
-	DateTime endDate = DateTime.Now;
+	DateTime startDate = DateTime.Today;
+	DateTime endDate = DateTime.Today;
 
 	IList<int> selectectedValue = new int[] { };
 	Dictionary<string, List<DataItem>> dataSets = new Dictionary<string, List<DataItem>>();
 	List<itemKey> items = new List<itemKey>();
 
 	bool smooth = false;
-	bool showDataLabels = false;
+	bool showDataLabels = true;
+
+	double StepValue = 1;
 
 	class DataItem
 	{
 		public string Date { get; set; }
 		public double Revenue { get; set; }
-	}
-
-	string FormatAsUSD(object value)
-	{
-		return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
-	}
-
-	string FormatAsMonth(object value)
-	{
-		if (value != null)
-		{
-			return Convert.ToDateTime(value).ToString("MMM");
-		}
-
-		return string.Empty;
 	}
 
 	async Task OnBusyClick()
@@ -110,7 +91,6 @@
 		DataService.DataUpdated += (sender, message) =>
 		{
 			UpdateList();
-
 			UpdateChartData();
 
 			StateHasChanged();
@@ -121,7 +101,10 @@
 
 	private void UpdateChartData()
 	{
-		if (DataService.Busy) 
+		if (DataService.Busy)
+			return;
+
+		if (!selectectedValue.Any())
 			return;
 
 		dataSets.Clear();
@@ -129,17 +112,34 @@
 		{
 			var key = items[selected].ItemName;
 			var list = new List<DataItem>();
-			foreach (var itemHistory in DataService.History[key].history.Where(x => x.Key >= startDate && x.Key <= endDate))
+
+			if (!DataService.History.ContainsKey(key))
+				return;
+
+			var matchingPeriod = DataService.History[key].history.Where(x => startDate.AddDays(-1) < x.Key && x.Key < endDate.AddDays(1));
+
+			Console.WriteLine($"Getting item between {startDate.AddDays(-1)} and {endDate.AddDays(1)}");
+
+			foreach (var itemHistory in matchingPeriod)
 			{
+				Console.WriteLine($"Got {itemHistory.Key}");
+
+				if (StepValue < itemHistory.Value.Ask)
+					StepValue = itemHistory.Value.Ask;
+
 				list.Add(new DataItem()
-				{
-					Date = itemHistory.Key.ToString(),
-					Revenue = itemHistory.Value.Ask,
-				});
+					{
+						Date = itemHistory.Key.ToString(),
+						Revenue = itemHistory.Value.Ask,
+					});
 			}
+
+			StepValue /= 3f;
 
 			dataSets.Add(key, list);
 		}
+
+		StateHasChanged();
 	}
 
 	protected void UpdateList()
@@ -157,7 +157,7 @@
 				});
 		}
 
-		Console.WriteLine($"keys: {items.Count}");
+		StateHasChanged();
 	}
 
 	public class itemKey
@@ -170,6 +170,11 @@
 	private void DateRangeChanged()
 	{
 		UpdateChartData();
+	}
+
+	private void SettingsChangedCallback()
+	{
+		StateHasChanged();
 	}
 }
 

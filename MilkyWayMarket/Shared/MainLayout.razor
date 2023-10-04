@@ -24,8 +24,7 @@
 			<RadzenRow AlignItems="AlignItems.Normal" JustifyContent="JustifyContent.Start" Gap="0px">
 				<RadzenColumn Size="5">
 					<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start">
-						<RadzenLabel Text="Milky Way Idle Market" style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-						</RadzenLabel>
+						<RadzenText Text="Milky Way Idle Market" TextStyle="TextStyle.H2"/>
 					</RadzenStack>
 				</RadzenColumn>
 				<RadzenColumn >
@@ -52,12 +51,7 @@
 	IJSObjectReference module;
 	IJSObjectReference database;
 	IJSObjectReference mooket;
-
-	void SidebarToggleClick()
-	{
-		sidebarExpanded = !sidebarExpanded;
-	}
-
+	
 	protected override async Task OnInitializedAsync()
 	{
 		DataService.DataUpdated += (sender, message) =>
