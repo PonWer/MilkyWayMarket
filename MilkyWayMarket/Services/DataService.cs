@@ -172,7 +172,9 @@ public class DataService : IDataService
 		DataUpdated.Invoke(null, $"Fetching data about {listAsString}");
 		var query = "SELECT DATETIME(time,\"unixepoch\") AS time, " +
 		            listAsString +
-					"FROM ask";
+					"FROM ask " +
+					"ORDER BY time DESC "+
+		            "LIMIT 100";
 
 		await mooket.InvokeVoidAsync("query", dataBase, query, dotNetObjectReferenceMailLayout);
 	}

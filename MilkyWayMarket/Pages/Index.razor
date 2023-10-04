@@ -47,14 +47,20 @@
 		@foreach (var data in dataSets)
 		{
 			<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Revenue">
-				<RadzenMarkers MarkerType="MarkerType.Square"/>
-				<RadzenSeriesDataLabels Visible="@showDataLabels"/>
+				<RadzenMarkers MarkerType="MarkerType.Square" />
+				<RadzenSeriesDataLabels Visible="@showDataLabels" />
+				@* 			<TooltipTemplate Context="item">
+		<div>
+		Revenue for <span>@item.Date</span> 2020:
+		<strong>@item.Revenue</strong>
+		</div>
+		</TooltipTemplate> *@
 			</RadzenLineSeries>
 		}
-		<RadzenCategoryAxis Padding="20"/>
+		<RadzenCategoryAxis Padding="20" />
 		<RadzenValueAxis Min="0" Step="@StepValue">
-			<RadzenGridLines Visible="true"/>
-			<RadzenAxisTitle Text="Ask"/>
+			<RadzenGridLines Visible="true" />
+			<RadzenAxisTitle Text="Ask" />
 		</RadzenValueAxis>
 	</RadzenChart>
 }
@@ -107,36 +113,103 @@
 		if (!selectectedValue.Any())
 			return;
 
-		dataSets.Clear();
+		foreach (var dataSet in dataSets)
+		{
+			dataSet.Value.Clear();
+		}
+
 		foreach (var selected in selectectedValue)
 		{
 			var key = items[selected].ItemName;
+			dataSets.TryAdd(key, new List<DataItem>());
+
 			var list = new List<DataItem>();
 
 			if (!DataService.History.ContainsKey(key))
 				return;
 
+			var days = (endDate - startDate).Days;
+
+			Console.WriteLine($"days {days}");
 			var matchingPeriod = DataService.History[key].history.Where(x => startDate.AddDays(-1) < x.Key && x.Key < endDate.AddDays(1));
 
 			Console.WriteLine($"Getting item between {startDate.AddDays(-1)} and {endDate.AddDays(1)}");
 
-			foreach (var itemHistory in matchingPeriod)
+			if (days <= 1)
 			{
-				Console.WriteLine($"Got {itemHistory.Key}");
+				Console.WriteLine("a");
+				foreach (var itemHistory in matchingPeriod)
+				{
+					//Console.WriteLine($"Got {itemHistory.Key}");
 
-				if (StepValue < itemHistory.Value.Ask)
-					StepValue = itemHistory.Value.Ask;
+					if (StepValue < itemHistory.Value.Ask)
+						StepValue = itemHistory.Value.Ask;
 
-				list.Add(new DataItem()
-					{
-						Date = itemHistory.Key.ToString(),
-						Revenue = itemHistory.Value.Ask,
-					});
+					list.Add(new DataItem()
+						{
+							Date = itemHistory.Key.ToShortTimeString(),
+							Revenue = itemHistory.Value.Ask,
+						});
+				}
+			}
+			else if (days <= 2)
+			{
+				Console.WriteLine("b");
+				// skip every other
+				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 1 == 0))
+				{
+					//Console.WriteLine($"Got {itemHistory.Key}");
+
+					if (StepValue < itemHistory.Value.Ask)
+						StepValue = itemHistory.Value.Ask;
+
+					list.Add(new DataItem()
+						{
+							Date = itemHistory.Key.ToString(),
+							Revenue = itemHistory.Value.Ask,
+						});
+				}
+			}
+			else if (days <= 5)
+			{
+				Console.WriteLine("c");
+				// skip every other
+				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 5 == 0))
+				{
+					//Console.WriteLine($"Got {itemHistory.Key}");
+
+					if (StepValue < itemHistory.Value.Ask)
+						StepValue = itemHistory.Value.Ask;
+
+					list.Add(new DataItem()
+						{
+							Date = itemHistory.Key.ToShortDateString(),
+							Revenue = itemHistory.Value.Ask,
+						});
+				}
+			}
+			else
+			{
+				Console.WriteLine("d");
+				// skip every other
+				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 10 == 0))
+				{
+					//Console.WriteLine($"Got {itemHistory.Key}");
+
+					if (StepValue < itemHistory.Value.Ask)
+						StepValue = itemHistory.Value.Ask;
+
+					list.Add(new DataItem()
+						{
+							Date = itemHistory.Key.ToShortDateString(),
+							Revenue = itemHistory.Value.Ask,
+						});
+				}
 			}
 
-			StepValue /= 3f;
+			StepValue = Math.Floor(StepValue / 3f);
 
-			dataSets.Add(key, list);
+			dataSets[key].AddRange(list);
 		}
 
 		StateHasChanged();
