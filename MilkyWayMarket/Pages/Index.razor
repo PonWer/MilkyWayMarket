@@ -46,13 +46,13 @@
 	<RadzenChart>
 		@foreach (var data in dataSets)
 		{
-			<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Revenue">
+			<RadzenLineSeries Smooth="@smooth" Data="@data.Value" CategoryProperty="Date" Title="@data.Key" LineType="LineType.Dashed" ValueProperty="Ask">
 				<RadzenMarkers MarkerType="MarkerType.Square" />
 				<RadzenSeriesDataLabels Visible="@showDataLabels" />
 				@* 			<TooltipTemplate Context="item">
 		<div>
-		Revenue for <span>@item.Date</span> 2020:
-		<strong>@item.Revenue</strong>
+		Ask for <span>@item.Date</span> 2020:
+		<strong>@item.Ask</strong>
 		</div>
 		</TooltipTemplate> *@
 			</RadzenLineSeries>
@@ -81,7 +81,7 @@
 	class DataItem
 	{
 		public string Date { get; set; }
-		public double Revenue { get; set; }
+		public double Ask { get; set; }
 	}
 
 	async Task OnBusyClick()
@@ -131,80 +131,62 @@
 			var days = (endDate - startDate).Days;
 
 			Console.WriteLine($"days {days}");
-			var matchingPeriod = DataService.History[key].history.Where(x => startDate.AddDays(-1) < x.Key && x.Key < endDate.AddDays(1));
+			var matchingPeriod = DataService.History[key].history
+				.Where(x => startDate.AddDays(-1) < x.Key && x.Key < endDate.AddDays(1))
+				.OrderByDescending(x => x.Key)
+				.ToList();
 
 			Console.WriteLine($"Getting item between {startDate.AddDays(-1)} and {endDate.AddDays(1)}");
 
-			if (days <= 1)
+			switch (days)
 			{
-				Console.WriteLine("a");
-				foreach (var itemHistory in matchingPeriod)
-				{
-					//Console.WriteLine($"Got {itemHistory.Key}");
-
-					if (StepValue < itemHistory.Value.Ask)
-						StepValue = itemHistory.Value.Ask;
-
-					list.Add(new DataItem()
-						{
-							Date = itemHistory.Key.ToShortTimeString(),
-							Revenue = itemHistory.Value.Ask,
-						});
-				}
+				case <= 1:
+					Console.WriteLine("a");
+					//matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 10 == 0);
+					break;
+				case <= 2:
+					Console.WriteLine($"b before filter {matchingPeriod.Count()}");
+					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 5 == 0).ToList();
+					Console.WriteLine($"b after filter {matchingPeriod.Count()}");
+					break;
+				case <= 5:
+					Console.WriteLine($"c before filter {matchingPeriod.Count()}");
+					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 10 == 0).ToList();
+					Console.WriteLine($"c after filter {matchingPeriod.Count()}");
+					break;
+				default:
+					Console.WriteLine($"d before filter {matchingPeriod.Count()}");
+					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 15 == 0).ToList();
+					Console.WriteLine($"d after filter {matchingPeriod.Count()}");
+					break;
 			}
-			else if (days <= 2)
+
+			foreach (var itemHistory in matchingPeriod)
 			{
-				Console.WriteLine("b");
-				// skip every other
-				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 1 == 0))
+				if (StepValue < itemHistory.Value.Ask)
+					StepValue = itemHistory.Value.Ask;
+
+				var item = new DataItem()
+					{
+						Ask = itemHistory.Value.Ask,
+					};
+
+				switch (days)
 				{
-					//Console.WriteLine($"Got {itemHistory.Key}");
-
-					if (StepValue < itemHistory.Value.Ask)
-						StepValue = itemHistory.Value.Ask;
-
-					list.Add(new DataItem()
-						{
-							Date = itemHistory.Key.ToString(),
-							Revenue = itemHistory.Value.Ask,
-						});
+					case <= 1:
+						item.Date = itemHistory.Key.ToShortTimeString();
+						break;
+					case <= 2:
+						item.Date = itemHistory.Key.ToShortTimeString();
+						break;
+					case <= 5:
+						item.Date = itemHistory.Key.ToShortTimeString();
+						break;
+					default:
+						item.Date = itemHistory.Key.ToShortTimeString();
+						break;
 				}
-			}
-			else if (days <= 5)
-			{
-				Console.WriteLine("c");
-				// skip every other
-				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 5 == 0))
-				{
-					//Console.WriteLine($"Got {itemHistory.Key}");
-
-					if (StepValue < itemHistory.Value.Ask)
-						StepValue = itemHistory.Value.Ask;
-
-					list.Add(new DataItem()
-						{
-							Date = itemHistory.Key.ToShortDateString(),
-							Revenue = itemHistory.Value.Ask,
-						});
-				}
-			}
-			else
-			{
-				Console.WriteLine("d");
-				// skip every other
-				foreach (var itemHistory in matchingPeriod.Where((x, i) => (i + 1) % 10 == 0))
-				{
-					//Console.WriteLine($"Got {itemHistory.Key}");
-
-					if (StepValue < itemHistory.Value.Ask)
-						StepValue = itemHistory.Value.Ask;
-
-					list.Add(new DataItem()
-						{
-							Date = itemHistory.Key.ToShortDateString(),
-							Revenue = itemHistory.Value.Ask,
-						});
-				}
+				list.Add(item);
 			}
 
 			StepValue = Math.Floor(StepValue / 3f);
