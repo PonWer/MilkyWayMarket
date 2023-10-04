@@ -28,12 +28,27 @@
 	<RadzenButton style="width: 160px" Icon="search" BusyText="Loading ..." IsBusy=@DataService.Busy Click=@OnBusyClick Text="Search" Disabled="@(!DataService.Initiated)" />
 </RadzenStack>
 
-<RadzenCard class="w-100 mb-4" Style="display: flex; align-items: center; gap: 0.5rem">
-	<RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox>
-	<RadzenLabel Text="Smooth" For="smooth" Style="margin-right: 1rem;" />
-	<RadzenCheckBox @bind-Value="@showDataLabels" Name="dataLabels"></RadzenCheckBox>
-	<RadzenLabel Text="Show Data Labels" For="dataLabels" />
-</RadzenCard>
+<RadzenStack AlignItems="AlignItems.Center" Class="rz-p-sm-12">
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+		<RadzenSwitch Value="@smooth" Disabled="@(!DataService.Initiated)" />
+		<RadzenLabel Text="Smooth lines" />
+	</RadzenStack>
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+		<RadzenSwitch Value="@showDataLabels" Disabled="@(!DataService.Initiated)" />
+		<RadzenLabel Text="Show Data Labels" />
+	</RadzenStack>
+</RadzenStack>
+
+<RadzenStack AlignItems="AlignItems.Center" Class="rz-p-sm-12">
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+		<RadzenDatePicker @bind-Value=@startDate InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
+	</RadzenStack>
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+		<RadzenDatePicker @bind-Value=@endDate InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
+	</RadzenStack>
+</RadzenStack>
+
+
 <RadzenChart>
 	@foreach (var data in dataSets)
 	{
@@ -51,6 +66,9 @@
 
 @code
 {
+	DateTime startDate = DateTime.Now;
+	DateTime endDate = DateTime.Now;
+
 	IList<int> selectectedValue = new int[] { };
 	Dictionary<string, List<DataItem>> dataSets = new Dictionary<string, List<DataItem>>();
 	List<itemKey> items = new List<itemKey>();
