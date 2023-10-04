@@ -41,10 +41,10 @@
 
 <RadzenStack AlignItems="AlignItems.Center" Class="rz-p-sm-12">
 	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-		<RadzenDatePicker @bind-Value=@startDate InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
+		<RadzenDatePicker @bind-Value=@startDate Change="@DateRangeChanged"  InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
 	</RadzenStack>
 	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-		<RadzenDatePicker @bind-Value=@endDate InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
+		<RadzenDatePicker @bind-Value=@endDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
 	</RadzenStack>
 </RadzenStack>
 
@@ -57,10 +57,10 @@
 			<RadzenSeriesDataLabels Visible="@showDataLabels" />
 		</RadzenLineSeries>
 	}
-	<RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" Min="0" Step="1" />
-	<RadzenValueAxis Formatter="@FormatAsUSD">
+	<RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" />
+	<RadzenValueAxis>
 		<RadzenGridLines Visible="true" />
-		<RadzenAxisTitle Text="Revenue in USD" />
+		<RadzenAxisTitle Text="Ask" />
 	</RadzenValueAxis>
 </RadzenChart>
 
@@ -111,29 +111,35 @@
 		{
 			UpdateList();
 
-			if (!DataService.Busy)
-			{
-				dataSets.Clear();
-				foreach (var selected in selectectedValue)
-				{
-					var key = items[selected].ItemName;
-					var list = new List<DataItem>();
-					foreach (var itemHistory in DataService.History[key].history)
-					{
-						list.Add(new DataItem()
-						{
-							Date = itemHistory.Key.ToString(), 
-							Revenue = itemHistory.Value.Ask,
-						});
-					}
-					dataSets.Add(key,list);
-				}
-			}
+			UpdateChartData();
 
 			StateHasChanged();
 		};
 
 		UpdateList();
+	}
+
+	private void UpdateChartData()
+	{
+		if (DataService.Busy) 
+			return;
+
+		dataSets.Clear();
+		foreach (var selected in selectectedValue)
+		{
+			var key = items[selected].ItemName;
+			var list = new List<DataItem>();
+			foreach (var itemHistory in DataService.History[key].history.Where(x => x.Key >= startDate && x.Key <= endDate))
+			{
+				list.Add(new DataItem()
+				{
+					Date = itemHistory.Key.ToString(),
+					Revenue = itemHistory.Value.Ask,
+				});
+			}
+
+			dataSets.Add(key, list);
+		}
 	}
 
 	protected void UpdateList()
@@ -159,6 +165,11 @@
 		public string ItemName { get; set; }
 		public int ItemIndex { get; set; }
 		public bool IsDisabled { get { return false; } }
+	}
+
+	private void DateRangeChanged()
+	{
+		UpdateChartData();
 	}
 }
 
