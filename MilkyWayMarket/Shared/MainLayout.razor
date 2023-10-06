@@ -20,40 +20,29 @@
 
 <RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
 	<RadzenHeader>
-		<RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Start" Gap="0">
-@* 			<RadzenColumn Size="5">
-				<RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
-			</RadzenColumn> *@
-			<RadzenColumn Size="7">
-				<RadzenStack AlignItems="AlignItems.Start" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-					<RadzenLabel Text="Milky Way Market" />
-				</RadzenStack>
-				<RadzenStack AlignItems="AlignItems.End" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-					<RadzenLabel Text="@dataUpdatedMessage" />
-				</RadzenStack>
-			</RadzenColumn>
-		</RadzenRow>
+		<ChildContent>
+			<RadzenRow AlignItems="AlignItems.Normal" JustifyContent="JustifyContent.Start" Gap="0px">
+				<RadzenColumn Size="5">
+					<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start">
+						<RadzenText Text="Milky Way Idle Market" TextStyle="TextStyle.H2"/>
+					</RadzenStack>
+				</RadzenColumn>
+				<RadzenColumn >
+					<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
+						<RadzenLabel Text="DataService:" Style="float: right" />
+						<RadzenLabel Text="@dataUpdatedMessage" Style="float: right" />
+					</RadzenStack>
+				</RadzenColumn>
+			</RadzenRow>
+		</ChildContent>
 	</RadzenHeader>
-	<RadzenBody Expanded="@sidebarExpanded">
+	<RadzenBody>
 		<RadzenRow class="rz-mx-auto rz-px-4 rz-pt-2 rz-pt-md-4 rz-pt-lg-6 rz-pt-xl-12 rz-pb-2 rz-pb-lg-12" Style="max-width: 1440px;">
 			<RadzenColumn Size="12">
 				@Body
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenBody>
-@* 	<RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
-		<RadzenStack AlignItems="AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
-			<RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage>
-			<RadzenText Text="Studio" TextStyle="TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
-		</RadzenStack>
-		<RadzenPanelMenu>
-			<RadzenPanelMenuItem Text="Home" Path="" />
-		</RadzenPanelMenu>
-		<RadzenStack AlignItems="AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
-			<RadzenText Text="Studio v1.0.0" TextStyle="TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
-			<RadzenText Text="@query" TextStyle="TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="TagName.P" TextAlign="TextAlign.Center" />
-		</RadzenStack>
-	</RadzenSidebar> *@
 </RadzenLayout>
 
 @code {
@@ -62,28 +51,23 @@
 	IJSObjectReference module;
 	IJSObjectReference database;
 	IJSObjectReference mooket;
-
-	void SidebarToggleClick()
-	{
-		sidebarExpanded = !sidebarExpanded;
-	}
-
+	
 	protected override async Task OnInitializedAsync()
 	{
 		DataService.DataUpdated += (sender, message) =>
 		{
-			dataUpdatedMessage = message;
+			dataUpdatedMessage = $"{(string.IsNullOrWhiteSpace(message) ? "Idle" : message)}";
 			StateHasChanged();
 		};
 
 		var databaseURL = "https://holychikenz.github.io/MWIApi/market.db";
-		
+
 		module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./dist/sql-httpvfs.js");
 		database = await module.InvokeAsync<IJSObjectReference>("load", databaseURL);
 		mooket = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./src/mooket.js");
 
 		var objectReference = DotNetObjectReference.Create(this);
-		
+
 		await DataService.Init(HttpClient, mooket, database, objectReference);
 	}
 
@@ -98,15 +82,15 @@
 			for (int i = 1; i < resultRow.Count; i++)
 			{
 				DataService.ReceiveData(
-					queryResults.columns[i], 
+					queryResults.columns[i],
 					true,
-					dateTime, 
+					dateTime,
 					string.IsNullOrWhiteSpace(resultRow[i]) ? -1 : double.Parse(resultRow[i]));
 			}
 		}
 
 		DataService.ReceivedDataComplete();
-		
+
 		StateHasChanged();
 	}
 
