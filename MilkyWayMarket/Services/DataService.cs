@@ -30,8 +30,11 @@ public class DataService : IDataService
 	public bool Busy { get; set; } = false;
 	public event EventHandler<string> DataUpdated;
 
+	public List<string> ItemFetchQueue = new List<string>();
+
 	public Dictionary<string, ItemHistory> History { get; } = new();
 
+	#region Keys
 	public List<string> HistoryKeys { get; } = new List<string>()
 	{
 		"Abyssal Essence", "Advanced Task Ring", "Amber", "Amethyst", "Apple", "Apple Gummy", "Apple Yogurt",
@@ -130,6 +133,8 @@ public class DataService : IDataService
 		"Wooden Water Staff", "Yogurt"};
 
 
+	#endregion
+
 	public bool Initiated { get; private set; }
 
 	public async Task Init(HttpClient httpClient, IJSObjectReference inMooket, IJSObjectReference inDatabase, DotNetObjectReference<MainLayout> dotNetObjectReference)
@@ -145,36 +150,52 @@ public class DataService : IDataService
 		DataUpdated?.Invoke(null, string.Empty);
 	}
 
-	public void ReceivedDataComplete()
+	public async void ReceivedDataComplete()
 	{
-		Busy = false;
-		DataUpdated?.Invoke(null, "Data received complete");
+		if (ItemFetchQueue.Any())
+			await FetchNextItem();
+		else
+		{
+			Busy = false;
+			DataUpdated?.Invoke(null, "Data received complete");
+		}
+
+		DataUpdated?.Invoke(null, "Data received");
 	}
 
 	public async Task Query(List<string> items)
 	{
-		var itemsToLoad = new List<string>();
+		
 		foreach (var item in items)
 		{
 			if (!History.ContainsKey(item))
 			{
-				itemsToLoad.Add($"\"{item}\"");
+				ItemFetchQueue.Add($"\"{item}\"");
 			}
 		}
 
-		if (!itemsToLoad.Any())
+		if (!ItemFetchQueue.Any())
 			return;
 
 		Busy = true;
 
-		var listAsString = string.Join(",", itemsToLoad);
 
-		DataUpdated.Invoke(null, $"Fetching data about {listAsString}");
+		await FetchNextItem();
+	}
+
+	private async Task FetchNextItem()
+	{
+		if (!ItemFetchQueue.Any())
+			return;
+
+		DataUpdated.Invoke(null, $"Fetching data about {ItemFetchQueue.First()}");
 		var query = "SELECT DATETIME(time,\"unixepoch\") AS time, " +
-		            listAsString +
-					"FROM ask " +
-					"ORDER BY time DESC "+
-		            "LIMIT 100";
+		            ItemFetchQueue.First() +
+		            "FROM ask " +
+		            "ORDER BY time DESC ";
+		//+ "LIMIT 100";
+
+		ItemFetchQueue.RemoveAt(0);
 
 		await mooket.InvokeVoidAsync("query", dataBase, query, dotNetObjectReferenceMailLayout);
 	}
@@ -194,6 +215,7 @@ public class DataService : IDataService
 			History[itemName].history[date].Bid = value;
 		}
 	}
+
 }
 public class ItemHistory
 {

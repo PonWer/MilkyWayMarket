@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using System.Globalization
+@using System.Collections
 @inject IDataService DataService
 
 <PageTitle>Index</PageTitle>
@@ -19,15 +20,17 @@
 					Style="width: 100%; max-width: 400px;" />
 	<RadzenButton style="width: 160px" Icon="search" BusyText="Loading ..." IsBusy=@DataService.Busy Click=@OnBusyClick Text="Search" Disabled="@(!DataService.Initiated)" />
 </RadzenRow>
+
+@*
 <RadzenRow JustifyContent="JustifyContent.Normal" AlignItems="AlignItems.Center" Gap="1rem" class="rz-border-info-light">
 	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
-		<RadzenText Text="Start Date" class="rz-text-capitalize" />
-		<RadzenDatePicker @bind-Value=@startDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
+	<RadzenText Text="Start Date" class="rz-text-capitalize" />
+	<RadzenDatePicker @bind-Value=@startDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today" DateFormat="dd/MM/yyyy" />
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
-		<RadzenText Text="End Date" class="rz-text-capitalize" />
-		<RadzenDatePicker @bind-Value=@endDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
+	<RadzenText Text="End Date" class="rz-text-capitalize" />
+	<RadzenDatePicker @bind-Value=@endDate Change="@DateRangeChanged" InitialViewDate="DateTime.Now" YearRange="2023:2023" ShowTime="false" Max="DateTime.Today.AddDays(1)" DateFormat="dd/MM/yyyy" />
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0rem">
@@ -39,6 +42,16 @@
 		<RadzenText Text="Show Data Labels" class="rz-text-capitalize" />
 		<RadzenSwitch @bind-Value=@showDataLabels Disabled="@(!DataService.Initiated)" Change="SettingsChangedCallback" />
 	</RadzenStack>
+</RadzenRow>
+*@
+
+<RadzenRow JustifyContent="JustifyContent.Normal" AlignItems="AlignItems.Center" Gap="1rem" class="rz-border-info-light">
+	<RadzenButton style="width: 80px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.Day)) Text="Day" Disabled="@(!DataService.Initiated)" />
+	<RadzenButton style="width: 80px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.Week)) Text="Week" Disabled="@(!DataService.Initiated)" />
+	<RadzenButton style="width: 80px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.Month)) Text="Month" Disabled="@(!DataService.Initiated)" />
+	<RadzenButton style="width: 160px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.ThreeMonths)) Text="Three Months" Disabled="@(!DataService.Initiated)" />
+	<RadzenButton style="width: 80px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.Year)) Text="Year" Disabled="@(!DataService.Initiated)" />
+	<RadzenButton style="width: 80px" IsBusy=@DataService.Busy Click=@(() => SetTimeLine(TimeLine.All)) Text="All" Disabled="@(!DataService.Initiated)" />
 </RadzenRow>
 
 @if (items.Any())
@@ -57,21 +70,39 @@
 		</TooltipTemplate> *@
 			</RadzenLineSeries>
 		}
-		<RadzenCategoryAxis Padding="20" />
+		<RadzenCategoryAxis>
+			<RadzenTicks>
+				<Template>
+					<text class="rz-tick-text" style="text-anchor: start; transform: translate(@(context.X)px, @(context.Y + 10)px) rotate(45deg)">@context.Value</text>
+				</Template>
+			</RadzenTicks>
+		</RadzenCategoryAxis>
 		<RadzenValueAxis Min="0" Step="@StepValue">
 			<RadzenGridLines Visible="true" />
 			<RadzenAxisTitle Text="Ask" />
+
 		</RadzenValueAxis>
 	</RadzenChart>
+
+
 }
 @code
 {
-	DateTime startDate = DateTime.Today;
-	DateTime endDate = DateTime.Today;
+	enum TimeLine
+	{
+		Day,
+		Week,
+		Month,
+		ThreeMonths,
+		Year,
+		All
+	}
+
 
 	IList<int> selectectedValue = new int[] { };
 	Dictionary<string, List<DataItem>> dataSets = new Dictionary<string, List<DataItem>>();
 	List<itemKey> items = new List<itemKey>();
+	TimeLine timeLine = TimeLine.Day;
 
 	bool smooth = false;
 	bool showDataLabels = true;
@@ -128,72 +159,198 @@
 			if (!DataService.History.ContainsKey(key))
 				return;
 
-			var days = (endDate - startDate).Days;
-
-			Console.WriteLine($"days {days}");
-			var matchingPeriod = DataService.History[key].history
-				.Where(x => startDate.AddDays(-1) < x.Key && x.Key < endDate.AddDays(1))
-				.OrderByDescending(x => x.Key)
-				.ToList();
-
-			Console.WriteLine($"Getting item between {startDate.AddDays(-1)} and {endDate.AddDays(1)}");
-
-			switch (days)
-			{
-				case <= 1:
-					Console.WriteLine("a");
-					//matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 10 == 0);
-					break;
-				case <= 2:
-					Console.WriteLine($"b before filter {matchingPeriod.Count()}");
-					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 5 == 0).ToList();
-					Console.WriteLine($"b after filter {matchingPeriod.Count()}");
-					break;
-				case <= 5:
-					Console.WriteLine($"c before filter {matchingPeriod.Count()}");
-					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 10 == 0).ToList();
-					Console.WriteLine($"c after filter {matchingPeriod.Count()}");
-					break;
-				default:
-					Console.WriteLine($"d before filter {matchingPeriod.Count()}");
-					matchingPeriod = matchingPeriod.Where((x, i) => (i + 1) % 15 == 0).ToList();
-					Console.WriteLine($"d after filter {matchingPeriod.Count()}");
-					break;
-			}
-
-			foreach (var itemHistory in matchingPeriod)
+			foreach (var itemHistory in GetTimeLineElements(key))
 			{
 				if (StepValue < itemHistory.Value.Ask)
 					StepValue = itemHistory.Value.Ask;
 
 				var item = new DataItem()
 					{
+						Date = itemHistory.Key,
 						Ask = itemHistory.Value.Ask,
 					};
 
-				switch (days)
-				{
-					case <= 1:
-						item.Date = itemHistory.Key.ToShortTimeString();
-						break;
-					case <= 2:
-						item.Date = itemHistory.Key.ToShortTimeString();
-						break;
-					case <= 5:
-						item.Date = itemHistory.Key.ToShortTimeString();
-						break;
-					default:
-						item.Date = itemHistory.Key.ToShortTimeString();
-						break;
-				}
 				list.Add(item);
 			}
 
 			StepValue = Math.Floor(StepValue / 3f);
 
+			if (StepValue <= 0)
+				StepValue = 1;
+
 			dataSets[key].AddRange(list);
 		}
 
+		StateHasChanged();
+	}
+
+	private IEnumerable<KeyValuePair<string, Item>> GetTimeLineElements(string key)
+	{
+		IEnumerable<KeyValuePair<DateTime, Item>> matchingPeriod = DataService.History[key].history
+			.OrderBy(x => x.Key);
+
+		switch (timeLine)
+		{
+			case TimeLine.Day:
+				matchingPeriod = matchingPeriod.Where(x => DateTime.Today.AddDays(-1) <= x.Key);
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				Console.WriteLine($"{TimeLine.Day} elements found {matchingPeriod.Count()} " +
+										$"between {DateTime.Today.AddDays(-1)} and (latest element){matchingPeriod.Last().Key.ToString()}");
+				break;
+			case TimeLine.Week:
+				matchingPeriod = matchingPeriod.Where(x => DateTime.Today.AddDays(-7) <= x.Key);
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				Console.WriteLine($"{TimeLine.Week} elements found {matchingPeriod.Count()} " +
+										$"between {DateTime.Today.AddDays(-7)} and (latest element){matchingPeriod.Last().Key.ToString()}");
+
+				break;
+			case TimeLine.Month:
+				matchingPeriod = matchingPeriod.Where(x => DateTime.Today.AddMonths(-1) <= x.Key);
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				Console.WriteLine($"{TimeLine.Month} elements found {matchingPeriod.Count()} " +
+										$"between {DateTime.Today.AddMonths(-1)} and (latest element){matchingPeriod.Last().Key.ToString()}");
+
+				break;
+			case TimeLine.ThreeMonths:
+				matchingPeriod = matchingPeriod.Where(x => DateTime.Today.AddMonths(-3) <= x.Key);
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				Console.WriteLine($"{TimeLine.ThreeMonths} elements found {matchingPeriod.Count()} " +
+										$"between {DateTime.Today.AddMonths(-3)} and (latest element){matchingPeriod.Last().Key.ToString()}");
+
+				break;
+			case TimeLine.Year:
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				matchingPeriod = matchingPeriod.Where(x => DateTime.Today.AddYears(-1) <= x.Key);
+				Console.WriteLine($"{TimeLine.Year} elements found {matchingPeriod.Count()} " +
+										$"between {DateTime.Today.AddYears(-1)} and (latest element){matchingPeriod.Last().Key.ToString()}");
+
+				break;
+			case TimeLine.All:
+
+				if (matchingPeriod == null || !matchingPeriod.Any()) return new List<KeyValuePair<string, Item>>();
+
+				Console.WriteLine($"{TimeLine.All} elements found {matchingPeriod.Count()}, (latest element){matchingPeriod.Last().Key.ToString()}");
+
+				break;
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+
+		var returnDictionary = new Dictionary<string, Item>();
+		switch (timeLine)
+		{
+			case TimeLine.Day:
+
+				foreach (var pair in matchingPeriod)
+				{
+					returnDictionary.Add(pair.Key.ToShortTimeString(), pair.Value);
+				}
+				break;
+			case TimeLine.Week:
+
+				foreach (var groupedOnDate in matchingPeriod.GroupBy(x => x.Key.Date))
+				{
+					for (int i = 0; i <= 24; i += 3)
+					{
+						var startHour = i - 3;
+						var endHour = i;
+
+						var timeSpan = groupedOnDate.Where(x => startHour <= x.Key.Hour && x.Key.Hour < endHour).ToList();
+
+						if (!timeSpan.Any())
+						{
+							Console.WriteLine($"None found for {groupedOnDate.Key} between {startHour} and {endHour}");
+							continue;
+						}
+
+						returnDictionary.Add(
+								timeSpan.First().Key.ToString("dd/MM HH"), new Item()
+									{
+										Ask = Math.Floor(timeSpan.Average(x => x.Value.Ask))
+									});
+
+					}
+				}
+
+				break;
+			case TimeLine.Month:
+				foreach (var groupedOnDate in matchingPeriod.GroupBy(x => x.Key.Date))
+				{
+					returnDictionary.Add(groupedOnDate.Key.ToString("dd/MM"), new Item()
+						{
+							Ask = Math.Floor(groupedOnDate.Average(x => x.Value.Ask))
+						});
+				}
+				break;
+			case TimeLine.ThreeMonths:
+
+				foreach (var groupedOnDate in matchingPeriod.GroupBy(x => x.Key.Date))
+				{
+					for (int i = 0; i <= 30; i += 10)
+					{
+						var startDay = i - 10;
+						var endDay = i;
+
+						var timeSpan = groupedOnDate.Where(x => startDay <= x.Key.Day && x.Key.Day < endDay).ToList();
+
+						if (!timeSpan.Any())
+						{
+							Console.WriteLine($"None found for {groupedOnDate.Key} between {startDay} and {endDay}");
+							continue;
+						}
+
+						returnDictionary.Add(
+							timeSpan.First().Key.ToString("dd/MM"), new Item()
+								{
+									Ask = Math.Floor(timeSpan.Average(x => x.Value.Ask))
+								});
+
+					}
+				}
+				break;
+			case TimeLine.Year:
+				foreach (var groupedOnDate in matchingPeriod.GroupBy(x => x.Key.Month))
+				{
+					returnDictionary.Add(groupedOnDate.First().Key.ToString("MMM yyyy", CultureInfo.InvariantCulture), new Item()
+						{
+							Ask = Math.Floor(groupedOnDate.Average(x => x.Value.Ask))
+						});
+				}
+				break;
+			case TimeLine.All:
+				foreach (var groupedOnDate in matchingPeriod.GroupBy(x => x.Key.Month))
+				{
+					returnDictionary.Add(groupedOnDate.First().Key.ToString("MMM yyyy", CultureInfo.InvariantCulture), new Item()
+						{
+							Ask = Math.Floor(groupedOnDate.Average(x => x.Value.Ask))
+						});
+				}
+				break;
+			default:
+				throw new ArgumentOutOfRangeException();
+		}
+		return returnDictionary;
+	}
+
+
+	void SetTimeLine(TimeLine inTimeLine)
+	{
+		timeLine = inTimeLine;
+
+		if (!selectectedValue.Any() || !dataSets.Any())
+			return;
+
+		UpdateChartData();
 		StateHasChanged();
 	}
 
